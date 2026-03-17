@@ -6,6 +6,7 @@ from typing import Dict
 from enum import Enum
 
 from code_indexer.workspace_models import Workspace
+from config.workspace_config import WORKSPACE
 # 定义状态枚举
 class StepStatus(str, Enum):
     PENDING = "pending"
@@ -73,7 +74,7 @@ class AgentState(BaseModel):
     messages: List[Dict] = Field(default_factory=list)
 
     # 代码库根路径，方便后续扫描和更新  
-    workspace_root: str = None
+    workspace_root: str = WORKSPACE
     # 开发计划，Step 也是 BaseModel
     plan: Optional[List[Step]] = None
 

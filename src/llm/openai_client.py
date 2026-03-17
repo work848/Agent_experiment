@@ -24,11 +24,11 @@ def call_gpt(messages, model="claude-haiku-4-5-20251001",response_format: str = 
     body = {
         "model": model,
         "messages": messages,
-        "tool_choice": "auto",
     }
     # 核心逻辑：工具调用和 JSON 模式的平衡
     if tools:
         body["tools"] = tools
+        body["tool_choice"] = "auto"
         body["temperature"]= 0.3
         # 注意：开启工具时，通常不设置 response_format 为 json_object
     
