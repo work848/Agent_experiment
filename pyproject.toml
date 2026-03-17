@@ -1,0 +1,41 @@
+[tool.poetry]
+# 核心配置：告诉 Poetry 把 src 目录下的包拉入搜索路径
+packages = [
+    { include = "agent", from = "src" },
+    { include = "tools", from = "src" },
+    { include = "utils", from = "src" },
+    { include = "test", from = "src" }
+]
+
+[project]
+name = "agentbuild"
+version = "0.1.0"
+description = "agent demo, a future assistent"
+authors = [
+    {name = "Gatsby"}
+]
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "fastapi (>=0.135.1,<0.136.0)",
+    "uvicorn (>=0.41.0,<0.42.0)",
+    "openai (>=2.26.0,<3.0.0)",
+    "langchain (>=1.2.10,<2.0.0)",
+    "langgraph (>=1.0.10,<2.0.0)",
+    "python-dotenv (>=1.2.2,<2.0.0)",
+    "exa-py (>=2.7.0,<3.0.0)",
+    "langchain-community (>=0.4.1,<0.5.0)",
+    "langchain-openai (>=1.1.10,<2.0.0)",
+    "chromadb (>=1.5.4,<2.0.0)",
+    "langchain-chroma (>=1.1.0,<2.0.0)",
+    "networkx (>=3.6.1,<4.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.0.2,<10.0.0)"
+]

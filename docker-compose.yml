@@ -1,0 +1,16 @@
+version: '3.9'
+
+services:
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: agent_chroma_db
+    ports:
+      - "8000:8000"
+    volumes:
+      # 将你的数据文件夹挂载到容器内，保证数据持久化
+      - ./long_memory/chroma_db:/data
+    environment:
+      - IS_PERSISTENT=TRUE
+      - PERSIST_DIRECTORY=/chromadb
+      - ANONYMIZED_TELEMETRY=FALSE
+    restart: always
