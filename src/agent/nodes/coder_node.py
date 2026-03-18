@@ -10,33 +10,13 @@ from code_indexer.get_workspace_skeleton import get_workspace_skeleton_direct
 from code_indexer.ast_checker import check_if_implemented
 from tools.write_file_tool import write_file
 from tools.read_file import read_file
-
+from agent.agent_prompt.coder_prompt import get_coder_system_prompt
 logger = logging.getLogger(__name__)
 
 # ────────────────────────────────────────────────────────
 # System Prompt：告诉 LLM 它的角色是一个编码器
 # ────────────────────────────────────────────────────────
-CODER_SYSTEM_PROMPT = """\
-You are an expert Python developer. Your ONLY job is to write Python code.
 
-CRITICAL RULES:
-- Do NOT call any tools or functions
-- Do NOT attempt to read files, run commands, or access any system
-- Do NOT use tool_calls
-- Do NOT say "let me check" or "let me look" — you already have all the context you need
-- No explanations, no comments outside the code blocks
-
-- If you are asked to CREATE a new file, you MUST return the complete file content inside a single ```python code block.
-- If you are asked to MODIFY an existing file, you MUST NOT output the entire file. Instead, use SEARCH/REPLACE blocks.
-
-SEARCH/REPLACE BLOCK FORMAT:
-<<<<
-[exact old lines to replace, matching the file perfectly]
-====
-[new lines to insert]
->>>>
-You may use multiple SEARCH/REPLACE blocks if needed.
-"""
 
 
 def _extract_python_code(text: str) -> Optional[str]:
@@ -231,14 +211,37 @@ def coder_node(state: AgentState):
 
         # 5. 构造 prompt 并调用 LLM
         user_prompt = _build_coder_prompt(step, workspace_skeleton, dep_context, existing_content)
+      
+
+        # 1. 判定现状
+        is_new_file = existing_content is None
+        is_new_func = True
+
+        if existing_content and f"def {step.interface.name}" in existing_content:
+            is_new_func = False
+
+        # 2. 动态分配模式 (Choice 分流)
+        if is_new_file:
+            # 场景 1: 完全是新文件 -> 全量模式
+            choice = 1
+        elif is_new_func:
+            # 场景 3: 文件在，但函数不在 (Step 3 的情况) -> 全量追加模式
+            choice = 3
+        else:
+            # 场景 2: 文件在，函数也在 -> 增量修改模式
+            choice = 2
+            
+        CODER_SYSTEM_PROMPT = get_coder_system_prompt(choice=choice)
+        # 3. 调用时传入这个动态的 prompt
+        
         messages = [
             {"role": "system", "content": CODER_SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt},
-        ]
-
+        ]   
+        
         try:
             logger.info("Step %d — calling LLM to generate code...", step.id)
-            response = call_gpt(messages=messages, tools=None)
+            response = call_gpt(messages=messages, tools=None, temperature=0.1)
             content = response["choices"][0]["message"]["content"]
             logger.info("Step %d — LLM Content:\n%s", step.id, content)
 

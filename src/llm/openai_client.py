@@ -14,7 +14,7 @@ API_KEY = os.getenv("NEW_API_LLM_API_KEY")
 
 OPENAI_TOOLS = [convert_to_openai_tool(t) for t in TOOLS]
 
-def call_gpt(messages, model="claude-haiku-4-5-20251001",response_format: str = None, tools: list = None):
+def call_gpt(messages, model="claude-haiku-4-5-20251001",response_format: str = None, tools: list = None, temperature: float = 0.2, max_tokens: int = 4096):
 
     headers = {
         "Authorization": f"Bearer {API_KEY}",
@@ -24,6 +24,8 @@ def call_gpt(messages, model="claude-haiku-4-5-20251001",response_format: str = 
     body = {
         "model": model,
         "messages": messages,
+        "temperature": temperature, # 默认加上低温，防止发散
+        "max_tokens": max_tokens    # 确保代码生成的上下文长度足够
     }
     # 核心逻辑：工具调用和 JSON 模式的平衡
     if tools:
