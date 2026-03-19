@@ -1,0 +1,32 @@
+
+import json
+import os
+
+
+import glob
+
+def load_latest_state(state_cls):
+    files = glob.glob("src/memory/state/state_*.json")
+    if not files:
+        return None
+
+    latest = max(files, key=os.path.getmtime)
+    return load_state(latest, state_cls)
+
+def load_state(state_cls, filepath="src/memory/state/current_state.json"):
+    """
+    从 JSON 恢复 AgentState
+    """
+
+    if not os.path.exists(filepath):
+        print("[Checkpoint] No saved state found")
+        return None
+
+    with open(filepath, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    # 🔥 关键：Pydantic 自动重建 Step / Email
+    state = state_cls.model_validate(data)
+
+    print(f"[Checkpoint] State loaded ← {filepath}")
+    return state

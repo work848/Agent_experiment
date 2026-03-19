@@ -13,10 +13,32 @@ class StepStatus(str, Enum):
     RUNNING = "running"  # 建议增加一个“运行中”，方便追踪
     SUCCESS = "success"
     FAILED = "failed"
+    
 class ReportStatus(str, Enum):
     PENDING = "pending"
     FIXED = "fixed"
     CLOSED = "closed"
+    
+class PlanStatus(str, Enum):
+    DRAFT = "draft"
+    CONFIRM = "confirm"
+    RUNNING = "running"
+    
+class Mode(str, Enum):
+    CHAT = "chat"        # 聊需求
+    PLANNING = "planning" # 生成 plan
+    EXECUTING = "executing" # 执行代码
+    
+class UserAction(str, Enum):
+    SAVE_PLAN = "save_plan"
+    REGENERATE_PLAN = "regenerate_plan"
+    GO_INTERFACE = "go_interface"   
+class NextNode(str, Enum):
+    CHAT = "chat"
+    PLANNER = "planner"
+    INTERFACE = "interface"
+    CODER = "coder"
+    END = "END" 
 
 class Parameter(BaseModel):
 
@@ -74,7 +96,7 @@ class AgentState(BaseModel):
     messages: List[Dict] = Field(default_factory=list)
 
     # 代码库根路径，方便后续扫描和更新  
-    workspace_root: str = WORKSPACE
+    workspace_root: Optional[str] = None
     # 开发计划，Step 也是 BaseModel
     plan: Optional[List[Step]] = None
 
@@ -84,14 +106,20 @@ class AgentState(BaseModel):
     # 这个邮箱是用来存储 LLM 之间的沟通内容的，方便后续分析和回溯
     mailbox: List[Email] = Field(default_factory=list)
     
-    current_agent: str = "planner"  # 当前负责执行的 agent
+    current_agent: NextNode = NextNode.CHAT# 当前负责执行的 agent
     # 这个字段是为了让中央调度员知道下一步应该唤起哪个节点的，避免在节点内部写死调用关系
-    next_agent: str ="planner"
+    next_node: NextNode = NextNode.CHAT
     
     # 存储 LLM 决定调用的工具信息
     tool_call: Optional[dict] = None
-
-    # 测试是否通过
+    #生成planner
+    trigger_plan: bool = False
+    #生成接口设计
+    interface_refresh: bool = False
+    
+    last_user_action: Optional[UserAction] = None
+    mode: Mode = Mode.CHAT
+    
     success: bool = False
     
     # 迭代计数

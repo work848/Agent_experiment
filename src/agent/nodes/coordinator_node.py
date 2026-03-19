@@ -1,5 +1,7 @@
 from langgraph.graph import StateGraph, END
 from agent.state import AgentState
+from agent.state import Mode
+from utils.user_action import handle_user_action
 
 
 
@@ -16,13 +18,28 @@ def central_coordinator(state: AgentState):
         return END
     
     
-    #正常流程
-    if state.current_agent == "planner":
-        return "interface"
+    #用户流程
+    if state.last_user_action:
+        state = handle_user_action(state.last_user_action, state)
+        state.last_user_action = None  # 防止重复触发
+        # ✅ 如果 handle_user_action 已经指定 next_node，直接返回
+        if state.next_node:
+            next_node = state.next_node  # 先存
+            state.next_node = None       # 再清
+            return next_node.value
 
-    if state.current_agent == "interface":
-        return END
+    # 正常调度逻辑
+    if state.mode == Mode.CHAT:
+        return "chat"
+    if state.mode == Mode.PLANNING:
+        if state.trigger_plan:
+            return "planner"
+        if state.interface_refresh:
+            return  "interface"
 
+    if state.mode == Mode.EXECUTING:
+            return END
+    
     # if state.current_agent == "coder":
     #     return "executor"
 
@@ -32,3 +49,4 @@ def central_coordinator(state: AgentState):
     # if state.current_agent == "tester":
     #     return END
     return END
+

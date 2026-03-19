@@ -1,8 +1,9 @@
 import os
 from dotenv import load_dotenv
 from fastapi import FastAPI
-from pydantic import BaseModel
-from agent.state import AgentState
+from pydantic import BaseModel, ConfigDict, Field
+from agent.state import AgentState, Mode, UserAction, NextNode, Step,Email
+from typing import Optional, List, Dict
 from agent.graph.build_graph import build_graph
 
 load_dotenv(dotenv_path="APIKey.env")
@@ -13,13 +14,16 @@ graph = build_graph()
 
 # session memory
 conversations = {}
-
-
 class ChatRequest(BaseModel):
-
-    session_id: str = "default"
-    message: str
-    mode: str = "coding"
+    session_id: str
+    message: list[str]
+    trigger_plan: bool = False
+    interface_refresh: bool = False
+    
+    last_user_action: Optional[UserAction] = None
+    next_node: Optional[NextNode] = None
+    mode: Mode.CHAT = Mode.CHAT
+    
 
 
 @app.get("/")
@@ -35,7 +39,7 @@ def chat(req: ChatRequest):
         req.session_id,
         {
             "messages": [],
-            "mode": req.mode
+            "mode": Mode.CHAT
         }
     )
 
@@ -46,29 +50,25 @@ def chat(req: ChatRequest):
     })
 
     # ===== 构建 graph state =====
-    state: AgentState = {
+    state = AgentState(
+        session_id=req.session_id,
+        messages=session["messages"],
 
-        "messages": session["messages"],
+        workspace_root=None,
+        plan=None,
+        current_step=0,
+        mailbox=[],
 
-        "tool_call": False,
+        mode = Mode.CHAT,
+        tool_call=None,
 
-        "code_context": [],
-
-        "plan": None,
-
-        "current_step": None,
-
-        "retrieved_memory": [],
-
-        "mode": req.mode
-    }
-
+        iterations=0,
+        max_iterations=5
+    )
     # ===== 调用 agent =====
     result = graph.invoke(state)
 
     # ===== conversation window =====
     session["messages"] = result["messages"][-12:]
 
-    return {
-        "response": result["messages"][-1]["content"]
-    }
+    return state

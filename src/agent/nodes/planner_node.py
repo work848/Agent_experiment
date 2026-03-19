@@ -51,7 +51,10 @@ def extract_json_from_markdown(text: str) -> str:
 
     raise ValueError("No valid JSON found in response")
 
-def planner_node(state):
+def planner_node(state):    
+    
+    if not state.trigger_plan:
+        return {}
 
     logger.info("Planner node started")
     state.current_agent = "planner"  # 明确当前节点身份，方便调度员决策
@@ -104,6 +107,7 @@ def planner_node(state):
     return {
         "plan": new_plan,
         "current_step": 0, # 通常重新规划后从第 0 步开始，也可以根据逻辑自定
+        "trigger_plan": False, # 规划完成后重置触发标志，由调度员控制何时再次触发
     }
 
 
