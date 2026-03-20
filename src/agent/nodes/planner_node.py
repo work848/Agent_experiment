@@ -33,6 +33,7 @@ def extract_json_from_markdown(text: str) -> str:
     - ``` code block
     - 普通 { } JSON
     """
+    
 
     # 1️⃣ 优先匹配 ```json code block
     match = re.search(r"```json\s*(\{.*?\})\s*```", text, re.S)

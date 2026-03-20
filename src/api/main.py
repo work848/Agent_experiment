@@ -71,4 +71,4 @@ def chat(req: ChatRequest):
     # ===== conversation window =====
     session["messages"] = result["messages"][-12:]
 
-    return state
+    return result

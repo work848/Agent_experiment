@@ -12,7 +12,7 @@ def save_state_versioned(state):
 
 def save_state(state: Any, filepath="src/memory/state/current_state.json"):
     """
-    保存整个 AgentState（安全版本）
+    保存整个 AgentState
     """
 
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
