@@ -179,20 +179,20 @@ def coder_node(state: AgentState):
 
         # 没有 interface 定义的步骤无法实现
         if not step.interface:
-            logger.warning("Step %d has no interface definition, skipping.", step.id)
+            logger.warning("Step %s has no interface definition, skipping.", step.id)
             new_plan.append(step)
             continue
 
         # 3. 检查是否已经实现了
         if _is_already_implemented(step, workspace_skeleton, state.workspace_root):
-            logger.info("Step %d (%s) already implemented, marking SUCCESS.", step.id, step.interface.name)
+            logger.info("Step %s (%s) already implemented, marking SUCCESS.", step.id, step.interface.name)
             updated_step = step.model_copy(update={"status": StepStatus.SUCCESS})
             new_plan.append(updated_step)
             implemented_count += 1
             continue
 
         # 4. 收集依赖上下文
-        logger.info("Step %d (%s) — gathering dependency context...", step.id, step.interface.name)
+        logger.info("Step %s (%s) — gathering dependency context...", step.id, step.interface.name)
         dep_context = _gather_dependency_context(step, state.plan, state.workspace_root)
 
         # 看看目标文件是否存在
@@ -240,21 +240,21 @@ def coder_node(state: AgentState):
         ]   
         
         try:
-            logger.info("Step %d — calling LLM to generate code...", step.id)
+            logger.info("Step %s — calling LLM to generate code...", step.id)
             response = call_gpt(messages=messages, tools=None, temperature=0.1)
             content = response["choices"][0]["message"]["content"]
-            logger.info("Step %d — LLM Content:\n%s", step.id, content)
+            logger.info("Step %s — LLM Content:\n%s", step.id, content)
 
             code = None
             if existing_content is not None:
                 # 增量修改模式
                 code = _apply_search_replace(existing_content, content)
                 if code == existing_content and "<<<<" not in content:
-                    logger.warning("Step %d — LLM did not return a valid patch block, or patch failed.", step.id)
+                    logger.warning("Step %s — LLM did not return a valid patch block, or patch failed.", step.id)
                     fallback_code = _extract_python_code(content)
                     if fallback_code:
                         code = fallback_code
-                        logger.info("Step %d — Falling back to full python rewrite.", step.id)
+                        logger.info("Step %s — Falling back to full python rewrite.", step.id)
                     else:
                         updated_step = step.model_copy(update={
                             "status": StepStatus.FAILED,
@@ -267,7 +267,7 @@ def coder_node(state: AgentState):
                 # 全新文件模式
                 code = _extract_python_code(content)
                 if not code:
-                    logger.error("Step %d — LLM did not return a valid python code block.", step.id)
+                    logger.error("Step %s — LLM did not return a valid python code block.", step.id)
                     updated_step = step.model_copy(update={
                         "status": StepStatus.FAILED,
                         "retries": step.retries + 1,
@@ -278,7 +278,7 @@ def coder_node(state: AgentState):
 
             # 7. 写入文件
             result = write_file(path=target_file, content=code)
-            logger.info("Step %d — write_file result: %s", step.id, result)
+            logger.info("Step %s — write_file result: %s", step.id, result)
 
             if "successfully" in result.lower():
                 updated_step = step.model_copy(update={
@@ -291,7 +291,7 @@ def coder_node(state: AgentState):
                 # 刷新 skeleton，后续步骤能基于最新状态判断
                 workspace_skeleton = get_workspace_skeleton_direct(state.workspace_root)
             else:
-                logger.error("Step %d — write_file failed: %s", step.id, result)
+                logger.error("Step %s — write_file failed: %s", step.id, result)
                 updated_step = step.model_copy(update={
                     "status": StepStatus.FAILED,
                     "retries": step.retries + 1,
@@ -300,7 +300,7 @@ def coder_node(state: AgentState):
                 failed_count += 1
 
         except Exception as e:
-            logger.error("Step %d — exception during code generation: %s", step.id, str(e))
+            logger.error("Step %s — exception during code generation: %s", step.id, str(e))
             updated_step = step.model_copy(update={
                 "status": StepStatus.FAILED,
                 "retries": step.retries + 1,

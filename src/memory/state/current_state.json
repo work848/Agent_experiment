@@ -1,0 +1,47 @@
+{
+  "session_id": "test 1",
+  "messages": [
+    {
+      "role": "user",
+      "content": "你好，我想要制作一个日语学习app，但是有ai功能，ai可以根据用户学习进度来进行安排复习和练习"
+    },
+    {
+      "role": "user",
+      "content": "你好，我想要制作一个日语学习app，但是有ai功能，ai可以根据用户学习进度来进行安排复习和练习"
+    },
+    {
+      "role": "user",
+      "content": "你好，我想要制作一个日语学习app，但是有ai功能，ai可以根据用户学习进度来进行安排复习和练习"
+    },
+    {
+      "role": "assistant",
+      "content": "需求信息已经足够完整。下一次请求我会自动进入规划并生成计划。"
+    }
+  ],
+  "workspace_root": null,
+  "plan": [],
+  "requirements": [],
+  "current_step": 0,
+  "mailbox": [],
+  "current_agent": "chat",
+  "next_node": "chat",
+  "tool_call": null,
+  "trigger_plan": false,
+  "interface_refresh": false,
+  "last_user_action": null,
+  "mode": "chat",
+  "ready_for_plan": true,
+  "suggested_actions": [
+    {
+      "action": "generate_plan",
+      "label": "生成计划"
+    },
+    {
+      "action": "continue_chat",
+      "label": "继续补充"
+    }
+  ],
+  "success": false,
+  "iterations": 0,
+  "max_iterations": 5
+}

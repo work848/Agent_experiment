@@ -9,7 +9,7 @@ def build_test_state():
 
     plan = [
         Step(
-            id=1,
+            id="R001-S01",
             description="Create main calculator module with add function",
             interface=None,
             implementation_file="calculator.py",
@@ -17,7 +17,7 @@ def build_test_state():
             retries=0
         ),
         Step(
-            id=2,
+            id="R001-S02",
             description="Implement subtract function in calculator module",
             interface=None,
             implementation_file="calculator.py",
@@ -25,7 +25,7 @@ def build_test_state():
             retries=0
         ),
         Step(
-            id=3,
+            id="R001-S03",
             description="Create main entry point with user interface for calculator operations",
             interface=None,
             implementation_file="main.py",
@@ -33,7 +33,7 @@ def build_test_state():
             retries=0
         ),
         Step(
-            id=4,
+            id="R001-S04",
             description="Write unit tests for add and subtract functions",
             interface=None,
             implementation_file="test_calculator.py",

@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO, format="%(name)s | %(levelname)s | %(mes
 
 def build_advanced_test_state():
     """
-    Advanced Test: 
+    Advanced Test:
     1. Create a NEW file (`advanced_ops.py`) for a function.
     2. EDIT that file to add another function (`factorial`).
     3. Create a NEW class file (`calculator_class.py`) that has DEPENDENCIES on `math_ops.py` and `advanced_ops.py`.
@@ -20,7 +20,7 @@ def build_advanced_test_state():
     plan = [
         # ===== PRE-EXISTING (math_ops.py already exists from previous tests) =====
         Step(
-            id=1,
+            id="R001-S01",
             description="Implement basic math operations",
             interface=Interface(
                 name="add",
@@ -35,10 +35,10 @@ def build_advanced_test_state():
             implementation_file="calculator/math_ops.py",
             status=StepStatus.SUCCESS,
         ),
-        
+
         # ===== AUGMENTED PENDING STEPS =====
         Step(
-            id=2,
+            id="R002-S01",
             description="Create advanced operations module with power function",
             interface=Interface(
                 name="power",
@@ -54,7 +54,7 @@ def build_advanced_test_state():
             status=StepStatus.PENDING,  # Should generate a NEW file
         ),
         Step(
-            id=3,
+            id="R002-S02",
             description="Add factorial function to advanced operations",
             interface=Interface(
                 name="factorial",
@@ -63,23 +63,23 @@ def build_advanced_test_state():
                 ],
                 return_type="int",
                 description="Return the factorial of n. Must be added to the existing advanced_ops.py module.",
-                dependencies=[2],  # Depends on the power function existence
+                dependencies=["R002-S01"],
             ),
             implementation_file="calculator/advanced_ops.py",
-            status=StepStatus.PENDING,  # Should EDIT the file created in step 2 (SEARCH/REPLACE diff)
+            status=StepStatus.PENDING,
         ),
         Step(
-            id=4,
+            id="R003-S01",
             description="Create a Calculator class combining basic and advanced ops",
             interface=Interface(
                 name="Calculator",
                 parameters=[],
                 return_type="None",
                 description="Create a class `Calculator` that exposes `add_numbers`, `power_numbers`, and `factorial_number` methods by delegating to the functions in math_ops and advanced_ops.",
-                dependencies=[1, 2, 3], # Depends on all previous math operations
+                dependencies=["R001-S01", "R002-S01", "R002-S02"],
             ),
             implementation_file="calculator/calculator_class.py",
-            status=StepStatus.PENDING,  # Should create a NEW file and utilize the context of dependencies
+            status=StepStatus.PENDING,
         ),
     ]
 
@@ -88,7 +88,7 @@ def build_advanced_test_state():
         messages=[
             {"role": "user", "content": "Build advanced components and integrate them into a class layer."}
         ],
-        workspace_root=r"C:\temp\testFolder", # 匹配测试环境
+        workspace_root=r"C:\temp\testFolder",
         plan=plan,
         current_step=0,
     )

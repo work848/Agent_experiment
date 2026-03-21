@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from agent.graph.build_graph import build_graph
 from agent.state import AgentState, Mode, NextNode, UserAction
+from utils.requirements_export import export_requirements_snapshot
 from utils.user_action import handle_user_action
 from utils.save_state import save_state
 
@@ -72,6 +73,27 @@ def _normalize_plan(plan: Any) -> List[Dict[str, Any]]:
     return normalized
 
 
+def _normalize_requirements(requirements: Any) -> List[Dict[str, Any]]:
+    normalized: List[Dict[str, Any]] = []
+    if not isinstance(requirements, list):
+        return normalized
+
+    for req in requirements:
+        req_dict = _to_plain(req) if not isinstance(req, dict) else _to_plain(req)
+        req_dict["id"] = str(req_dict.get("id", ""))
+        req_dict["priority"] = int(req_dict.get("priority", 3) or 3)
+        req_dict["acceptance_criteria"] = [
+            str(item) for item in (req_dict.get("acceptance_criteria") or [])
+        ]
+        req_dict["step_ids"] = [str(item) for item in (req_dict.get("step_ids") or [])]
+        status = req_dict.get("status")
+        if status not in {"pending", "in_progress", "done", "blocked"}:
+            req_dict["status"] = "pending"
+        normalized.append(req_dict)
+
+    return normalized
+
+
 def _derive_agents(result: Dict[str, Any]) -> Dict[str, str]:
     agents = {
         "planner": "idle",
@@ -127,6 +149,7 @@ def chat(req: ChatRequest):
             "messages": [],
             "mode": Mode.CHAT,
             "plan": None,
+            "requirements": [],
             "current_step": 0,
             "mailbox": [],
             "consumed_last_user_action": None,
@@ -164,6 +187,7 @@ def chat(req: ChatRequest):
             messages=session.get("messages", []),
             workspace_root=None,
             plan=session.get("plan"),
+            requirements=_normalize_requirements(session.get("requirements", [])),
             current_step=session.get("current_step", 0),
             mailbox=session.get("mailbox", []),
             mode=session.get("mode", Mode.CHAT),
@@ -191,6 +215,7 @@ def chat(req: ChatRequest):
         messages=session.get("messages", []),
         workspace_root=None,
         plan=session.get("plan"),
+        requirements=_normalize_requirements(session.get("requirements", [])),
         current_step=session.get("current_step", 0),
         mailbox=session.get("mailbox", []),
         mode=req_mode,
@@ -211,6 +236,7 @@ def chat(req: ChatRequest):
     session["messages"] = (result_dict.get("messages") or session["messages"])[-12:]
     session["mode"] = result_dict.get("mode", req_mode)
     session["plan"] = result_dict.get("plan", session.get("plan"))
+    session["requirements"] = _normalize_requirements(result_dict.get("requirements", session.get("requirements", [])))
     session["current_step"] = result_dict.get("current_step", session.get("current_step", 0))
     session["mailbox"] = result_dict.get("mailbox", session.get("mailbox", []))
     session["ready_for_plan"] = bool(result_dict.get("ready_for_plan", False))
@@ -218,6 +244,7 @@ def chat(req: ChatRequest):
 
     response = {
         "plan": _normalize_plan(result_dict.get("plan", session.get("plan"))),
+        "requirements": _normalize_requirements(result_dict.get("requirements", session.get("requirements", []))),
         "current_step": int(result_dict.get("current_step", session.get("current_step", 0)) or 0),
         "agents": _derive_agents(result_dict),
         "logs": _derive_logs(result_dict),
@@ -226,6 +253,8 @@ def chat(req: ChatRequest):
         "actions": session.get("suggested_actions", []),
     }
 
+    export_requirements_snapshot(_normalize_requirements(session.get("requirements", [])))
+
     # 将当前完整状态落盘，供前端/后续流程复用
     save_state(
         AgentState(
@@ -233,6 +262,7 @@ def chat(req: ChatRequest):
             messages=session.get("messages", []),
             workspace_root=None,
             plan=session.get("plan"),
+            requirements=_normalize_requirements(session.get("requirements", [])),
             current_step=session.get("current_step", 0),
             mailbox=session.get("mailbox", []),
             mode=session.get("mode", Mode.CHAT),

@@ -1,34 +1,34 @@
-from typing import TypedDict, List, Dict, Optional
-from pydantic import BaseModel, ConfigDict, Field
-from typing import List, Optional
-from typing import Dict
-
 from enum import Enum
+from typing import Dict, List, Optional
 
-from code_indexer.workspace_models import Workspace
-from config.workspace_config import WORKSPACE
-# 定义状态枚举
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
 class StepStatus(str, Enum):
     PENDING = "pending"
-    RUNNING = "running"  # 建议增加一个“运行中”，方便追踪
+    RUNNING = "running"
     SUCCESS = "success"
     FAILED = "failed"
-    
+
+
 class ReportStatus(str, Enum):
     PENDING = "pending"
     FIXED = "fixed"
     CLOSED = "closed"
-    
+
+
 class PlanStatus(str, Enum):
     DRAFT = "draft"
     CONFIRM = "confirm"
     RUNNING = "running"
-    
+
+
 class Mode(str, Enum):
-    CHAT = "chat"        # 聊需求
-    PLANNING = "planning" # 生成 plan
-    EXECUTING = "executing" # 执行代码
-    
+    CHAT = "chat"
+    PLANNING = "planning"
+    EXECUTING = "executing"
+
+
 class UserAction(str, Enum):
     SAVE_PLAN = "save_plan"
     REGENERATE_PLAN = "regenerate_plan"
@@ -36,119 +36,156 @@ class UserAction(str, Enum):
     GENERATE_PLAN = "generate_plan"
     CONTINUE_CHAT = "continue_chat"
     MODIFY_PLAN = "modify_plan"
+
+
 class NextNode(str, Enum):
     CHAT = "chat"
     PLANNER = "planner"
     INTERFACE = "interface"
     CODER = "coder"
-    END = "END" 
+    END = "END"
+
+
+class RequirementStatus(str, Enum):
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    DONE = "done"
+    BLOCKED = "blocked"
+
 
 class Parameter(BaseModel):
-
     name: str
     type: str
 
 
 class Interface(BaseModel):
-
     name: str
-
     parameters: List[Parameter]
-
     return_type: str
-
     description: str
-    
-    dependencies: List[int] = Field(default_factory=list)
+    dependencies: List[str] = Field(default_factory=list)
+
+    @field_validator("dependencies", mode="before")
+    @classmethod
+    def _normalize_dependencies(cls, value):
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return [str(v) for v in value]
+        return [str(value)]
+
 
 class Step(BaseModel):
-
-    id: int
-
+    id: str
     description: str
-
     interface: Optional[Interface] = None
-
     implementation_file: Optional[str] = None
-    
-    # dependencies: List[int] = []
-
     status: StepStatus = StepStatus.PENDING
-    
     retries: int = 0
-    
+
+    @field_validator("id", mode="before")
+    @classmethod
+    def _normalize_id(cls, value):
+        return str(value)
+
+
+class Requirement(BaseModel):
+    id: str
+    title: str
+    description: str
+    acceptance_criteria: List[str] = Field(default_factory=list)
+    priority: int = 3
+    status: RequirementStatus = RequirementStatus.PENDING
+    step_ids: List[str] = Field(default_factory=list)
+
+    @field_validator("id", mode="before")
+    @classmethod
+    def _normalize_requirement_id(cls, value):
+        return str(value)
+
+    @field_validator("step_ids", mode="before")
+    @classmethod
+    def _normalize_step_ids(cls, value):
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return [str(v) for v in value]
+        return [str(value)]
+
+
 class Email(BaseModel):
     thread_id: str
     source: str
     target: str
-
     content: str
     reply_content: str | None = None
-
     resume_to: str | None = None
-
     is_resolved: bool = False
-# 这个类是整个 Agent 的核心状态管理类，包含了会话 ID、消息历史、扫描的代码库上下文、开发计划等信息
+
+
 class AgentState(BaseModel):
-    model_config = ConfigDict(
-        arbitrary_types_allowed=True
-    )
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     session_id: str
-    
-    # 默认空列表，不需要手动初始化
     messages: List[Dict] = Field(default_factory=list)
-
-    # 代码库根路径，方便后续扫描和更新  
     workspace_root: Optional[str] = None
-    # 开发计划，Step 也是 BaseModel
     plan: Optional[List[Step]] = None
+    requirements: List[Requirement] = Field(default_factory=list)
 
-    # 当前执行到第几步
     current_step: int = 0
-
-    # 这个邮箱是用来存储 LLM 之间的沟通内容的，方便后续分析和回溯
     mailbox: List[Email] = Field(default_factory=list)
-    
-    current_agent: NextNode = NextNode.CHAT# 当前负责执行的 agent
-    # 这个字段是为了让中央调度员知道下一步应该唤起哪个节点的，避免在节点内部写死调用关系
+
+    current_agent: NextNode = NextNode.CHAT
     next_node: NextNode = NextNode.CHAT
-    
-    # 存储 LLM 决定调用的工具信息
+
     tool_call: Optional[dict] = None
-    #生成planner
     trigger_plan: bool = False
-    #生成接口设计
     interface_refresh: bool = False
-    
+
     last_user_action: Optional[UserAction] = None
     mode: Mode = Mode.CHAT
     ready_for_plan: bool = False
     suggested_actions: List[Dict] = Field(default_factory=list)
 
     success: bool = False
-    
-    # 迭代计数
+
     iterations: int = 0
     max_iterations: int = 5
 
-# 这个类部分更新是为了让 palnnerLLM 专注于输出它最擅长的内容：开发计划
+
 class StepDraft(BaseModel):
-    id: int
-
+    id: str
     description: str
-
     implementation_file: Optional[str] = None
-    
-    dependencies: List[int] = []
+    dependencies: List[str] = Field(default_factory=list)
+
+    @field_validator("id", mode="before")
+    @classmethod
+    def _normalize_id(cls, value):
+        return str(value)
+
+    @field_validator("dependencies", mode="before")
+    @classmethod
+    def _normalize_dependencies(cls, value):
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return [str(v) for v in value]
+        return [str(value)]
+
+
 class PlannerOutput(BaseModel):
-    # 我们只要求模型返回它最擅长的：开发计划
     plan: List[StepDraft]
 
 
-# 这个类是 interface_build_node 的输出格式，包含了每个步骤的接口设计信息
 class InterfaceTask(BaseModel):
-    step_id: int
-    interface: Interface  # 使用你之前定义的 Interface 模型
+    step_id: str
+    interface: Interface
+
+    @field_validator("step_id", mode="before")
+    @classmethod
+    def _normalize_step_id(cls, value):
+        return str(value)
 
 
 class InterfaceDesignOutput(BaseModel):

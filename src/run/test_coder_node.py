@@ -18,7 +18,7 @@ def build_test_state():
     plan = [
         # ===== 已实现的步骤（模拟上一轮的成果）=====
         Step(
-            id=1,
+            id="R001-S01",
             description="Implement add function",
             interface=Interface(
                 name="add",
@@ -34,7 +34,7 @@ def build_test_state():
             status=StepStatus.SUCCESS,  # ← 已完成
         ),
         Step(
-            id=2,
+            id="R001-S02",
             description="Implement subtract function",
             interface=Interface(
                 name="subtract",
@@ -50,14 +50,14 @@ def build_test_state():
             status=StepStatus.SUCCESS,  # ← 已完成
         ),
         Step(
-            id=3,
+            id="R001-S03",
             description="Implement calculator main entry point",
             interface=Interface(
                 name="main",
                 parameters=[],
                 return_type="None",
                 description="CLI calculator with add and subtract",
-                dependencies=[1, 2],
+                dependencies=["R001-S01", "R001-S02"],
             ),
             implementation_file="calculator/main.py",
             status=StepStatus.SUCCESS,  # ← 已完成
@@ -65,7 +65,7 @@ def build_test_state():
 
         # ===== 新增的步骤，需要在已有代码上扩展 =====
         Step(
-            id=4,
+            id="R002-S01",
             description="Add multiply function to existing math_ops module",
             interface=Interface(
                 name="multiply",
@@ -75,13 +75,13 @@ def build_test_state():
                 ],
                 return_type="float",
                 description="Return a multiplied by b. Add this function to the existing math_ops.py file that already has add and subtract.",
-                dependencies=[1, 2],  # 依赖已有的 math_ops
+                dependencies=["R001-S01", "R001-S02"],  # 依赖已有的 math_ops
             ),
             implementation_file="calculator/math_ops.py",
             status=StepStatus.PENDING,
         ),
         Step(
-            id=5,
+            id="R002-S02",
             description="Add divide function to existing math_ops module",
             interface=Interface(
                 name="divide",
@@ -91,7 +91,7 @@ def build_test_state():
                 ],
                 return_type="float",
                 description="Return a divided by b. Handle division by zero. Add this function to the existing math_ops.py file that already has add, subtract, and multiply.",
-                dependencies=[1, 2, 4],  # 依赖已有的 + multiply
+                dependencies=["R001-S01", "R001-S02", "R002-S01"],  # 依赖已有的 + multiply
             ),
             implementation_file="calculator/math_ops.py",
             status=StepStatus.PENDING,

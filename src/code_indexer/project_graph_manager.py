@@ -85,7 +85,7 @@ class ProjectGraphManager:
         return report
 
     # --- 核心功能：拓扑排序（给 Agent 导航） ---
-    def get_writing_sequence(self) -> List[int]:
+    def get_writing_sequence(self) -> List[str]:
         """
         计算最科学的编写顺序：先写被依赖最多的底层工具
         """
