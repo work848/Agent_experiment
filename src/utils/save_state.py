@@ -23,4 +23,4 @@ def save_state(state: Any, filepath="src/memory/state/current_state.json"):
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(state_dict, f, indent=2, ensure_ascii=False)
 
-    print(f"[Checkpoint] State saved → {filepath}")
+    print(f"[Checkpoint] State saved -> {filepath}")

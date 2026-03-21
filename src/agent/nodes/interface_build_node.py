@@ -41,13 +41,13 @@ def interface_node(state: AgentState):
     # for s in state.plan:
     #     print(s)
     steps_to_design = [
-        s for s in state.plan 
+        s for s in state.plan
         if s.interface is None and s.status == StepStatus.PENDING
     ]
 
     if not steps_to_design:
         # 无需变动，直接返回空字典（表示不更新状态）
-        return {} 
+        return {}
 
     # 2️⃣ 获取上下文并调用 LLM
     skeleton_context = get_workspace_skeleton_direct(state.workspace_root)
@@ -66,7 +66,7 @@ def interface_node(state: AgentState):
     content = response["choices"][0]["message"]["content"]
     # print(json.dumps(response, indent=2, ensure_ascii=False, default=str))
     json_text = extract_json(content)
-    
+
     # 验证并解析 LLM 输出
     design_data = InterfaceDesignOutput.model_validate_json(json_text)
     # print("LLM returned interface design:", design_data)
@@ -81,17 +81,16 @@ def interface_node(state: AgentState):
         if step.id in design_map:
             # 更新 interface 并返回新对象
             new_step = step.model_copy(
-            update={"interface": design_map[step.id]}
-        )
+                update={"interface": design_map[step.id]}
+            )
         else:
-             new_step = step
+            new_step = step
         new_plan.append(new_step)
 
     # 4️⃣ 返回更新：只返回变动的部分
     # LangGraph 会自动把这些值 update 到全局 state 中
-    
-    
     return {
         "plan": new_plan,
-        "current_agent": "interface"
+        "current_agent": "interface",
+        "interface_refresh": False,
     }

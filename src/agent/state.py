@@ -32,7 +32,10 @@ class Mode(str, Enum):
 class UserAction(str, Enum):
     SAVE_PLAN = "save_plan"
     REGENERATE_PLAN = "regenerate_plan"
-    GO_INTERFACE = "go_interface"   
+    GO_INTERFACE = "go_interface"
+    GENERATE_PLAN = "generate_plan"
+    CONTINUE_CHAT = "continue_chat"
+    MODIFY_PLAN = "modify_plan"
 class NextNode(str, Enum):
     CHAT = "chat"
     PLANNER = "planner"
@@ -119,7 +122,9 @@ class AgentState(BaseModel):
     
     last_user_action: Optional[UserAction] = None
     mode: Mode = Mode.CHAT
-    
+    ready_for_plan: bool = False
+    suggested_actions: List[Dict] = Field(default_factory=list)
+
     success: bool = False
     
     # 迭代计数

@@ -109,6 +109,7 @@ def planner_node(state):
         "plan": new_plan,
         "current_step": 0, # 通常重新规划后从第 0 步开始，也可以根据逻辑自定
         "trigger_plan": False, # 规划完成后重置触发标志，由调度员控制何时再次触发
+        "interface_refresh": True,
     }
 
 

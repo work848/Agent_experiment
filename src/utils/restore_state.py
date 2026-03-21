@@ -11,7 +11,7 @@ def load_latest_state(state_cls):
         return None
 
     latest = max(files, key=os.path.getmtime)
-    return load_state(latest, state_cls)
+    return load_state(state_cls, latest)
 
 def load_state(state_cls, filepath="src/memory/state/current_state.json"):
     """
@@ -28,5 +28,5 @@ def load_state(state_cls, filepath="src/memory/state/current_state.json"):
     # 🔥 关键：Pydantic 自动重建 Step / Email
     state = state_cls.model_validate(data)
 
-    print(f"[Checkpoint] State loaded ← {filepath}")
+    print(f"[Checkpoint] State loaded <- {filepath}")
     return state

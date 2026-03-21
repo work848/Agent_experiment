@@ -9,15 +9,15 @@ def central_coordinator(state: AgentState):
     # 工具调用流程
     if state.tool_call:
         return state.current_agent
-    
+
     # 邮件调用流程
     for mail in state.mailbox:
         if not mail.is_resolved:
             return mail.target
     if state.success:
         return END
-    
-    
+
+
     #用户流程
     if state.last_user_action:
         state = handle_user_action(state.last_user_action, state)
@@ -30,6 +30,12 @@ def central_coordinator(state: AgentState):
 
     # 正常调度逻辑
     if state.mode == Mode.CHAT:
+        # CHAT 模式每次请求只执行一轮：
+        # 如果最新一条已经是 assistant 回复，则结束，避免 chat->coordinator 死循环
+        if state.messages:
+            last_message = state.messages[-1]
+            if isinstance(last_message, dict) and last_message.get("role") == "assistant":
+                return END
         return "chat"
     if state.mode == Mode.PLANNING:
         if state.trigger_plan:
@@ -39,7 +45,7 @@ def central_coordinator(state: AgentState):
 
     if state.mode == Mode.EXECUTING:
             return END
-    
+
     # if state.current_agent == "coder":
     #     return "executor"
 
@@ -49,4 +55,5 @@ def central_coordinator(state: AgentState):
     # if state.current_agent == "tester":
     #     return END
     return END
+
 

@@ -11,11 +11,12 @@ from agent.nodes.tester_node import tester_node
 from agent.nodes.tool_node import tool_node
 from agent.nodes.coordinator_node import central_coordinator
 
+
 def build_hub_graph():
     graph = StateGraph(AgentState)
 
     # 注册所有执行节点
-    graph.add_node("chat",chat_node)
+    graph.add_node("chat", chat_node)
     graph.add_node("planner", planner_node)
     graph.add_node("interface", interface_node)
     # graph.add_node("coder", coder_node)
@@ -23,16 +24,15 @@ def build_hub_graph():
     # graph.add_node("tester", tester_node)
 
     # 入口直接交给调度员（在这里我们用一个虚拟起点，或者让 planner 作为起点）
-    graph.set_entry_point("chat") 
+    graph.set_entry_point("chat")
 
     # --- 核心改动：所有节点执行完都必须“回到”调度决策点 ---
     # 在 LangGraph 中，我们通过给每个节点添加去往“调度判断”的条件边来实现
-    
-    nodes = ["chat","planner", "interface"]
+    nodes = ["chat", "planner", "interface"]
     for node in nodes:
         graph.add_conditional_edges(
             node,
-            central_coordinator, # 每一站结束都问调度员：下一步去哪？
+            central_coordinator,  # 每一站结束都问调度员：下一步去哪？
             {
                 "planner": "planner",
                 "interface": "interface",
@@ -40,8 +40,12 @@ def build_hub_graph():
                 # "coder": "coder",
                 # "executor": "executor",
                 # "tester": "tester",
-                END: END
-            }
+                END: END,
+            },
         )
 
     return graph.compile()
+
+
+def build_graph():
+    return build_hub_graph()

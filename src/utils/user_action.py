@@ -1,14 +1,9 @@
-
-
-from agent.nodes.interface_build_node import interface_node
-from agent.nodes.planner_node import planner_node
-from agent.nodes.interface_build_node import interface_node
-from agent.nodes import planner_node
-from agent.state import AgentState, UserAction,NextNode
+from agent.state import AgentState, UserAction, NextNode, Mode
 
 from utils.restore_state import load_latest_state
 from utils.save_state import save_state
-from utils.restore_state import load_latest_state
+
+
 def handle_user_action(action: UserAction, state: AgentState):
     if action == UserAction.SAVE_PLAN:
         save_state(state)
@@ -16,13 +11,37 @@ def handle_user_action(action: UserAction, state: AgentState):
         return state
 
     if action == UserAction.REGENERATE_PLAN:
-        state = load_latest_state(AgentState)
+        restored = load_latest_state(AgentState)
+        if restored is not None:
+            state = restored
+        state.mode = Mode.PLANNING
+        state.trigger_plan = True
         state.next_node = NextNode.PLANNER
         return state
 
     if action == UserAction.GO_INTERFACE:
-        state = load_latest_state(AgentState)
+        restored = load_latest_state(AgentState)
+        if restored is not None:
+            state = restored
         state.next_node = NextNode.INTERFACE
+        return state
+
+    if action == UserAction.GENERATE_PLAN:
+        state.mode = Mode.PLANNING
+        state.trigger_plan = True
+        state.next_node = NextNode.PLANNER
+        return state
+
+    if action == UserAction.CONTINUE_CHAT:
+        state.mode = Mode.CHAT
+        state.trigger_plan = False
+        state.next_node = NextNode.CHAT
+        return state
+
+    if action == UserAction.MODIFY_PLAN:
+        state.mode = Mode.PLANNING
+        state.trigger_plan = True
+        state.next_node = NextNode.PLANNER
         return state
 
     return state
