@@ -6,15 +6,15 @@ import logging
 from agent.state import AgentState
 from tools.tool_registry import TOOLS
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from agent.state import AgentState 
- 
+from config.env_setting import BASE_URL
+from config.env_setting import BASE_KEY
 
-API_URL = "https://ai.huan666.de/v1/chat/completions"
-API_KEY = os.getenv("NEW_API_LLM_API_KEY")
+API_URL = f"{BASE_URL}/v1/chat/completions"
+API_KEY = BASE_KEY
 
 OPENAI_TOOLS = [convert_to_openai_tool(t) for t in TOOLS]
 
-def call_gpt(messages, model="claude-haiku-4-5-20251001",response_format: str = None, tools: list = None, temperature: float = 0.2, max_tokens: int = 4096):
+def call_gpt(messages, model="gpt-5.2-codex",response_format: str = None, tools: list = None, temperature: float = 0.2):
 
     headers = {
         "Authorization": f"Bearer {API_KEY}",
@@ -24,8 +24,8 @@ def call_gpt(messages, model="claude-haiku-4-5-20251001",response_format: str = 
     body = {
         "model": model,
         "messages": messages,
-        "temperature": temperature, # 默认加上低温，防止发散
-        "max_tokens": max_tokens    # 确保代码生成的上下文长度足够
+        "temperature": temperature # 默认加上低温，防止发散
+        # "max_tokens": max_tokens    # 确保代码生成的上下文长度足够
     }
     # 核心逻辑：工具调用和 JSON 模式的平衡
     if tools:

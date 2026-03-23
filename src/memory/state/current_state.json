@@ -1,26 +1,809 @@
 {
-  "session_id": "test 1",
+  "session_id": "string",
   "messages": [
     {
       "role": "user",
-      "content": "你好，我想要制作一个日语学习app，但是有ai功能，ai可以根据用户学习进度来进行安排复习和练习"
-    },
-    {
-      "role": "user",
-      "content": "你好，我想要制作一个日语学习app，但是有ai功能，ai可以根据用户学习进度来进行安排复习和练习"
-    },
-    {
-      "role": "user",
-      "content": "你好，我想要制作一个日语学习app，但是有ai功能，ai可以根据用户学习进度来进行安排复习和练习"
-    },
-    {
-      "role": "assistant",
-      "content": "需求信息已经足够完整。下一次请求我会自动进入规划并生成计划。"
+      "content": "你好，我想要制作一个日语学习app，但是有ai功能，ai可以根据用户学习进度来进行安排复习和练习我主要面对完全零基础的人群，这个app的主要目的是为了帮助外国人在日本找工作的实用类。2.五十音，词汇、语法、听力、会话 都有。是综合类app 3.ai的作用是根据用户目前学习进度来制作练习语法，词汇类练习，练习的类型根据用户的正确率和学习进度来。4复习时间采用艾宾浩斯遗忘曲线 5.我自己学习日语时最大的问题是难以得到我想要的练习方式，我希望ai可以定制复习或者练习需要加强职场相关的内容，面试，简历，和职业相关单词，但是这些要等用户把基础打好才可以进行专项训练，2.如果用户某一个知识点一直错误的话，我更倾向于使用情景会话的方式来帮助用户理解 3.练习方便以翻译题为主，选择题为辅助的模式，外加一定阶段后的情景对话模拟。4.我们这个app是注重职业训练所以，用户需要先表达自己的就业倾向，之后给对应的推荐路线。基础路线五十音→基础词汇→N5语法所有路线都是固定，之后随着职业不同来改变。"
     }
   ],
   "workspace_root": null,
-  "plan": [],
-  "requirements": [],
+  "plan": [
+    {
+      "id": "R001-S01",
+      "description": "Define product scope, target persona (zero-base learners), and learning goals oriented to Japan job-seeking within product requirements and onboarding copy.",
+      "interface": {
+        "name": "defineProductScope",
+        "parameters": [
+          {
+            "name": "marketContext",
+            "type": "string"
+          },
+          {
+            "name": "targetPersona",
+            "type": "string"
+          },
+          {
+            "name": "learningGoals",
+            "type": "string[]"
+          }
+        ],
+        "return_type": "ProductScope",
+        "description": "Define product scope, persona, and learning goals for Japan job-seeking onboarding.",
+        "dependencies": []
+      },
+      "implementation_file": null,
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "R001-S02",
+      "description": "Design end-to-end learning journey from beginner to career training with gated progression in UX flow.",
+      "interface": {
+        "name": "designLearningJourney",
+        "parameters": [
+          {
+            "name": "productScope",
+            "type": "ProductScope"
+          }
+        ],
+        "return_type": "LearningJourney",
+        "description": "Design end-to-end learning journey with gated progression UX flow.",
+        "dependencies": [
+          "defineProductScope"
+        ]
+      },
+      "implementation_file": null,
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "R002-S01",
+      "description": "Create course module taxonomy covering kana, vocabulary, grammar, listening, and conversation.",
+      "interface": {
+        "name": "createCourseModuleTaxonomy",
+        "parameters": [
+          {
+            "name": "learningGoals",
+            "type": "string[]"
+          }
+        ],
+        "return_type": "CourseModuleTaxonomy",
+        "description": "Create taxonomy for kana, vocabulary, grammar, listening, and conversation modules.",
+        "dependencies": []
+      },
+      "implementation_file": null,
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "R002-S02",
+      "description": "Implement content module containers and navigation for the five required modules.",
+      "interface": {
+        "name": "buildCourseModules",
+        "parameters": [
+          {
+            "name": "taxonomy",
+            "type": "CourseModuleTaxonomy"
+          }
+        ],
+        "return_type": "CourseModules",
+        "description": "Implement module containers and navigation for required modules.",
+        "dependencies": [
+          "createCourseModuleTaxonomy"
+        ]
+      },
+      "implementation_file": "src/modules/CourseModules.ts",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "R003-S01",
+      "description": "Implement fixed foundational learning route sequence: kana → basic vocabulary → N5 grammar.",
+      "interface": {
+        "name": "defineBasicRouteSequence",
+        "parameters": [
+          {
+            "name": "modules",
+            "type": "CourseModules"
+          }
+        ],
+        "return_type": "LearningRoute",
+        "description": "Implement foundational route: kana → basic vocabulary → N5 grammar.",
+        "dependencies": [
+          "buildCourseModules"
+        ]
+      },
+      "implementation_file": "src/learning/BasicRoute.ts",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "R003-S02",
+      "description": "Add progress tracking and gating to prevent access to career training before foundation completion.",
+      "interface": {
+        "name": "addProgressTrackingAndGating",
+        "parameters": [
+          {
+            "name": "route",
+            "type": "LearningRoute"
+          }
+        ],
+        "return_type": "ProgressGatingPolicy",
+        "description": "Add progress tracking and gate career training until foundation completion.",
+        "dependencies": [
+          "defineBasicRouteSequence"
+        ]
+      },
+      "implementation_file": "src/learning/ProgressTracker.ts",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "R004-S01",
+      "description": "Implement AI practice generation service that reads user progress and produces vocabulary/grammar exercises within learned scope.",
+      "interface": {
+        "name": "generatePracticeExercises",
+        "parameters": [
+          {
+            "name": "userProgress",
+            "type": "UserProgress"
+          },
+          {
+            "name": "knowledgeScope",
+            "type": "KnowledgeScope"
+          }
+        ],
+        "return_type": "PracticeSet",
+        "description": "Generate AI practice exercises within learned vocabulary/grammar scope.",
+        "dependencies": [
+          "addProgressTrackingAndGating"
+        ]
+      },
+      "implementation_file": "src/ai/PracticeGenerator.ts",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "R005-S01",
+      "description": "Capture per-item correctness and aggregate accuracy metrics for adaptive practice.",
+      "interface": {
+        "name": "recordAccuracy",
+        "parameters": [
+          {
+            "name": "userId",
+            "type": "string"
+          },
+          {
+            "name": "itemId",
+            "type": "string"
+          },
+          {
+            "name": "isCorrect",
+            "type": "boolean"
+          }
+        ],
+        "return_type": "AccuracyStats",
+        "description": "Capture per-item correctness and aggregate accuracy metrics.",
+        "dependencies": []
+      },
+      "implementation_file": "src/analytics/AccuracyTracker.ts",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "R005-S02",
+      "description": "Implement adaptive logic to adjust practice type, difficulty, and frequency based on accuracy and progress.",
+      "interface": {
+        "name": "adaptPracticeSchedule",
+        "parameters": [
+          {
+            "name": "accuracyStats",
+            "type": "AccuracyStats"
+          },
+          {
+            "name": "userProgress",
+            "type": "UserProgress"
+          }
+        ],
+        "return_type": "AdaptivePlan",
+        "description": "Adjust practice type, difficulty, and frequency based on accuracy and progress.",
+        "dependencies": [
+          "recordAccuracy"
+        ]
+      },
+      "implementation_file": "src/ai/AdaptiveScheduler.ts",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "R006-S01",
+      "description": "Implement Ebbinghaus-based review scheduler using learning records to create review nodes.",
+      "interface": {
+        "name": "scheduleEbbinghausReviews",
+        "parameters": [
+          {
+            "name": "learningRecords",
+            "type": "LearningRecord[]"
+          }
+        ],
+        "return_type": "ReviewPlan",
+        "description": "Create review nodes using Ebbinghaus-based scheduling.",
+        "dependencies": []
+      },
+      "implementation_file": "src/review/EbbinghausScheduler.ts",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "R006-S02",
+      "description": "Add UI for review plan visibility and reminders with scheduled items.",
+      "interface": {
+        "name": "renderReviewDashboard",
+        "parameters": [
+          {
+            "name": "reviewPlan",
+            "type": "ReviewPlan"
+          }
+        ],
+        "return_type": "ReviewDashboardView",
+        "description": "Provide UI for review plan visibility and reminders.",
+        "dependencies": [
+          "scheduleEbbinghausReviews"
+        ]
+      },
+      "implementation_file": "src/review/ReviewDashboard.ts",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "R007-S01",
+      "description": "Create career training content modules for interviews, resumes, and job-related vocabulary.",
+      "interface": {
+        "name": "createCareerModules",
+        "parameters": [
+          {
+            "name": "careerTracks",
+            "type": "string[]"
+          }
+        ],
+        "return_type": "CareerModuleSet",
+        "description": "Create interview, resume, and job-vocabulary career modules.",
+        "dependencies": []
+      },
+      "implementation_file": "src/career/CareerModules.ts",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "R007-S02",
+      "description": "Gate career modules behind foundation completion checks.",
+      "interface": {
+        "name": "guardCareerAccess",
+        "parameters": [
+          {
+            "name": "userProgress",
+            "type": "UserProgress"
+          },
+          {
+            "name": "gatingPolicy",
+            "type": "ProgressGatingPolicy"
+          }
+        ],
+        "return_type": "AccessDecision",
+        "description": "Gate career modules behind foundation completion checks.",
+        "dependencies": [
+          "addProgressTrackingAndGating"
+        ]
+      },
+      "implementation_file": "src/career/CareerAccessGuard.ts",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "R008-S01",
+      "description": "Implement employment preference collection during onboarding or career planning entry.",
+      "interface": {
+        "name": "collectEmploymentPreferences",
+        "parameters": [
+          {
+            "name": "userId",
+            "type": "string"
+          },
+          {
+            "name": "formInput",
+            "type": "EmploymentPreferenceInput"
+          }
+        ],
+        "return_type": "EmploymentPreferences",
+        "description": "Collect employment preferences during onboarding or career planning.",
+        "dependencies": []
+      },
+      "implementation_file": "src/profile/EmploymentPreferenceForm.ts",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "R008-S02",
+      "description": "Store employment preferences and recommend post-foundation career routes accordingly.",
+      "interface": {
+        "name": "recommendCareerRoute",
+        "parameters": [
+          {
+            "name": "preferences",
+            "type": "EmploymentPreferences"
+          },
+          {
+            "name": "careerModules",
+            "type": "CareerModuleSet"
+          }
+        ],
+        "return_type": "CareerRouteRecommendation",
+        "description": "Store preferences and recommend post-foundation career routes.",
+        "dependencies": [
+          "collectEmploymentPreferences",
+          "createCareerModules"
+        ]
+      },
+      "implementation_file": "src/career/RouteRecommender.ts",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "R009-S01",
+      "description": "Implement route-specific content switching after foundation based on career direction.",
+      "interface": {
+        "name": "switchCareerRouteContent",
+        "parameters": [
+          {
+            "name": "userId",
+            "type": "string"
+          },
+          {
+            "name": "routeRecommendation",
+            "type": "CareerRouteRecommendation"
+          }
+        ],
+        "return_type": "RouteSwitchResult",
+        "description": "Switch content after foundation based on career direction.",
+        "dependencies": [
+          "recommendCareerRoute"
+        ]
+      },
+      "implementation_file": "src/career/RouteSwitcher.ts",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "R009-S02",
+      "description": "Display current career route and ensure route-specific vocab/scenario/practice differences.",
+      "interface": {
+        "name": "renderCareerRouteView",
+        "parameters": [
+          {
+            "name": "currentRoute",
+            "type": "CareerRoute"
+          }
+        ],
+        "return_type": "CareerRouteViewModel",
+        "description": "Display current career route with route-specific vocab/scenario/practice differences.",
+        "dependencies": [
+          "switchCareerRouteContent"
+        ]
+      },
+      "implementation_file": "src/career/CareerRouteView.ts",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "R010-S01",
+      "description": "Detect persistent errors per knowledge point and trigger scenario-based dialogue practice.",
+      "interface": {
+        "name": "detectPersistentErrors",
+        "parameters": [
+          {
+            "name": "performanceData",
+            "type": "PerformanceData"
+          }
+        ],
+        "return_type": "ErrorTrigger",
+        "description": "Detect persistent errors per knowledge point and trigger scenario practice.",
+        "dependencies": [
+          "recordAccuracy"
+        ]
+      },
+      "implementation_file": "src/ai/ErrorScenarioTrigger.ts",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "R010-S02",
+      "description": "Generate contextual dialogue exercises tied to the erroneous knowledge point.",
+      "interface": {
+        "name": "generateScenarioDialogue",
+        "parameters": [
+          {
+            "name": "errorTrigger",
+            "type": "ErrorTrigger"
+          },
+          {
+            "name": "knowledgePoint",
+            "type": "KnowledgePoint"
+          }
+        ],
+        "return_type": "DialogueExercise",
+        "description": "Generate contextual dialogue exercises tied to erroneous knowledge points.",
+        "dependencies": [
+          "detectPersistentErrors"
+        ]
+      },
+      "implementation_file": "src/ai/ScenarioDialogueGenerator.ts",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "R011-S01",
+      "description": "Implement practice item types with translation as primary and multiple-choice as secondary, with stage-based ratios.",
+      "interface": {
+        "name": "configurePracticeTypes",
+        "parameters": [
+          {
+            "name": "stage",
+            "type": "LearningStage"
+          }
+        ],
+        "return_type": "PracticeTypeConfig",
+        "description": "Set translation primary and multiple-choice secondary with stage-based ratios.",
+        "dependencies": []
+      },
+      "implementation_file": "src/practice/PracticeTypes.ts",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "R011-S02",
+      "description": "Enable stage-based unlock for scenario dialogue practice within practice system.",
+      "interface": {
+        "name": "unlockScenarioPractice",
+        "parameters": [
+          {
+            "name": "stage",
+            "type": "LearningStage"
+          },
+          {
+            "name": "unlockRules",
+            "type": "UnlockRules"
+          }
+        ],
+        "return_type": "UnlockStatus",
+        "description": "Enable stage-based unlock for scenario dialogue practice.",
+        "dependencies": [
+          "configurePracticeTypes"
+        ]
+      },
+      "implementation_file": "src/practice/ScenarioUnlock.ts",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "R012-S01",
+      "description": "Define unlock criteria for scenario dialogue simulations and integrate with progression.",
+      "interface": {
+        "name": "defineDialogueUnlockCriteria",
+        "parameters": [
+          {
+            "name": "progress",
+            "type": "UserProgress"
+          }
+        ],
+        "return_type": "UnlockRules",
+        "description": "Define unlock criteria for scenario dialogue simulations integrated with progression.",
+        "dependencies": [
+          "addProgressTrackingAndGating"
+        ]
+      },
+      "implementation_file": "src/dialogue/DialogueUnlockCriteria.ts",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "R012-S02",
+      "description": "Implement multi-turn dialogue simulation with daily and job-seeking scenarios.",
+      "interface": {
+        "name": "simulateDialogue",
+        "parameters": [
+          {
+            "name": "scenario",
+            "type": "DialogueScenario"
+          },
+          {
+            "name": "userState",
+            "type": "UserState"
+          }
+        ],
+        "return_type": "DialogueSession",
+        "description": "Run multi-turn dialogue simulation with daily and job-seeking scenarios.",
+        "dependencies": [
+          "defineDialogueUnlockCriteria"
+        ]
+      },
+      "implementation_file": "src/dialogue/DialogueSimulator.ts",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "R013-S01",
+      "description": "Identify weak knowledge points from performance data and generate personalized review tasks.",
+      "interface": {
+        "name": "generatePersonalizedReviewTasks",
+        "parameters": [
+          {
+            "name": "performanceData",
+            "type": "PerformanceData"
+          },
+          {
+            "name": "userProgress",
+            "type": "UserProgress"
+          }
+        ],
+        "return_type": "ReviewTaskSet",
+        "description": "Identify weak knowledge points and generate personalized review tasks.",
+        "dependencies": [
+          "recordAccuracy"
+        ]
+      },
+      "implementation_file": "src/ai/PersonalizedReview.ts",
+      "status": "pending",
+      "retries": 0
+    },
+    {
+      "id": "R013-S02",
+      "description": "Adjust personalized reinforcement plans based on ongoing performance and user preferences.",
+      "interface": {
+        "name": "adjustPersonalizedTrainingPlan",
+        "parameters": [
+          {
+            "name": "reviewTasks",
+            "type": "ReviewTaskSet"
+          },
+          {
+            "name": "userPreferences",
+            "type": "UserPreferences"
+          }
+        ],
+        "return_type": "PersonalizedTrainingPlan",
+        "description": "Adjust personalized reinforcement plans based on performance and preferences.",
+        "dependencies": [
+          "generatePersonalizedReviewTasks"
+        ]
+      },
+      "implementation_file": "src/ai/PersonalizedTrainingPlanner.ts",
+      "status": "pending",
+      "retries": 0
+    }
+  ],
+  "requirements": [
+    {
+      "id": "R001",
+      "title": "面向零基础学习者的日语学习应用",
+      "description": "构建一款面向日语完全零基础用户的综合学习App，核心目标是帮助外国人在日本求职，覆盖从入门到职业场景训练的完整学习路径。",
+      "acceptance_criteria": [
+        "应用目标用户被定义为日语完全零基础学习者。",
+        "应用学习目标明确包含“帮助外国人在日本找工作”的实用导向。",
+        "产品内容覆盖从基础学习到职业专项训练的连续学习流程。",
+        "应用支持用户从零开始建立基础后逐步进入求职相关训练。"
+      ],
+      "priority": 1,
+      "status": "pending",
+      "step_ids": [
+        "R001-S01",
+        "R001-S02"
+      ]
+    },
+    {
+      "id": "R002",
+      "title": "综合课程内容体系",
+      "description": "应用应提供完整的日语学习内容体系，至少包括五十音、词汇、语法、听力和会话模块，形成综合类学习产品。",
+      "acceptance_criteria": [
+        "课程模块中包含五十音学习内容。",
+        "课程模块中包含词汇学习内容。",
+        "课程模块中包含语法学习内容。",
+        "课程模块中包含听力训练内容。",
+        "课程模块中包含会话训练内容。"
+      ],
+      "priority": 1,
+      "status": "pending",
+      "step_ids": [
+        "R002-S01",
+        "R002-S02"
+      ]
+    },
+    {
+      "id": "R003",
+      "title": "固定基础学习路线",
+      "description": "应用应为所有用户提供统一的基础学习路线，按照五十音→基础词汇→N5语法的顺序推进，确保用户在进入职业专项训练前具备必要基础。",
+      "acceptance_criteria": [
+        "所有新用户默认进入统一的基础学习路线。",
+        "基础学习路线顺序固定为“五十音→基础词汇→N5语法”。",
+        "用户在完成基础路线前不能进入职业专项训练内容。",
+        "系统能够记录用户在基础路线中的完成进度。"
+      ],
+      "priority": 1,
+      "status": "pending",
+      "step_ids": [
+        "R003-S01",
+        "R003-S02"
+      ]
+    },
+    {
+      "id": "R004",
+      "title": "基于学习进度的AI练习生成",
+      "description": "应用应提供AI功能，根据用户当前学习进度动态生成语法和词汇练习内容，确保练习与用户当前能力水平匹配。",
+      "acceptance_criteria": [
+        "AI能够读取用户当前学习进度数据。",
+        "AI可生成语法类练习。",
+        "AI可生成词汇类练习。",
+        "生成的练习内容与用户当前已学习范围一致，不超出当前阶段过多。"
+      ],
+      "priority": 1,
+      "status": "pending",
+      "step_ids": [
+        "R004-S01"
+      ]
+    },
+    {
+      "id": "R005",
+      "title": "基于正确率的AI练习自适应",
+      "description": "AI应根据用户练习正确率与学习进度调整练习类型、难度和强化重点，以满足用户对个性化练习方式的需求。",
+      "acceptance_criteria": [
+        "系统能够记录用户各练习题目的正确率。",
+        "AI会根据正确率变化调整后续练习内容。",
+        "当某类知识点正确率较低时，系统会增加该类练习频次。",
+        "当用户学习进度提升时，AI会同步提升练习难度或复杂度。"
+      ],
+      "priority": 1,
+      "status": "pending",
+      "step_ids": [
+        "R005-S01",
+        "R005-S02"
+      ]
+    },
+    {
+      "id": "R006",
+      "title": "基于艾宾浩斯遗忘曲线的复习安排",
+      "description": "应用应使用艾宾浩斯遗忘曲线为用户自动安排复习时间，提升记忆保持效果。",
+      "acceptance_criteria": [
+        "系统可根据用户学习记录生成复习计划。",
+        "复习提醒或复习任务安排遵循艾宾浩斯遗忘曲线逻辑。",
+        "用户完成学习后，系统会自动创建后续复习节点。",
+        "用户可在应用内查看待复习内容及对应时间安排。"
+      ],
+      "priority": 1,
+      "status": "pending",
+      "step_ids": [
+        "R006-S01",
+        "R006-S02"
+      ]
+    },
+    {
+      "id": "R007",
+      "title": "职场导向专项训练",
+      "description": "应用应在用户完成基础能力建设后，提供与日本求职相关的专项训练内容，包括面试、简历和职业相关词汇学习。",
+      "acceptance_criteria": [
+        "专项训练内容包含面试场景训练。",
+        "专项训练内容包含简历相关内容训练。",
+        "专项训练内容包含职业相关词汇训练。",
+        "用户只有在完成基础路线后才能解锁职场专项训练。"
+      ],
+      "priority": 1,
+      "status": "pending",
+      "step_ids": [
+        "R007-S01",
+        "R007-S02"
+      ]
+    },
+    {
+      "id": "R008",
+      "title": "就业倾向采集与路线推荐",
+      "description": "应用应要求用户先表达就业倾向，并基于该倾向在基础路线完成后推荐对应的职业学习路线。",
+      "acceptance_criteria": [
+        "用户首次使用或进入职业规划阶段时需要填写就业倾向信息。",
+        "系统能够保存用户的就业倾向。",
+        "基础路线完成后，系统会根据就业倾向推荐对应职业路线。",
+        "不同就业倾向可触发不同的后续专项学习内容。"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "step_ids": [
+        "R008-S01",
+        "R008-S02"
+      ]
+    },
+    {
+      "id": "R009",
+      "title": "职业路线在基础后分化",
+      "description": "应用应在固定基础路线之后，根据用户不同职业方向提供差异化学习内容和训练重点。",
+      "acceptance_criteria": [
+        "所有用户在基础阶段学习内容一致。",
+        "基础阶段结束后，系统可根据职业方向切换后续内容。",
+        "不同职业路线至少在词汇、场景或练习内容上存在差异。",
+        "系统能够明确展示用户当前所属职业学习路线。"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "step_ids": [
+        "R009-S01",
+        "R009-S02"
+      ]
+    },
+    {
+      "id": "R010",
+      "title": "错误知识点的情景会话强化",
+      "description": "当用户在某一知识点上持续出错时，系统应优先采用情景会话方式帮助用户理解和巩固该知识点。",
+      "acceptance_criteria": [
+        "系统能够识别用户在同一知识点上的持续错误行为。",
+        "当某知识点达到持续错误阈值时，系统会触发情景会话式练习。",
+        "情景会话内容与该错误知识点直接相关。",
+        "用户可在对应知识点下收到针对性的情景理解练习。"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "step_ids": [
+        "R010-S01",
+        "R010-S02"
+      ]
+    },
+    {
+      "id": "R011",
+      "title": "以翻译题为主的练习模式",
+      "description": "应用的练习设计应以翻译题为主，选择题为辅助，并在一定学习阶段后加入情景对话模拟。",
+      "acceptance_criteria": [
+        "练习系统中提供翻译题型，并作为主要题型出现。",
+        "练习系统中提供选择题型，并作为辅助题型使用。",
+        "系统可根据学习阶段控制题型比例。",
+        "用户达到设定阶段后，系统会开放情景对话模拟练习。"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "step_ids": [
+        "R011-S01",
+        "R011-S02"
+      ]
+    },
+    {
+      "id": "R012",
+      "title": "阶段性情景对话模拟",
+      "description": "应用应在用户达到一定学习阶段后提供情景对话模拟，帮助用户将基础知识应用到真实交流和求职场景中。",
+      "acceptance_criteria": [
+        "系统为情景对话模拟设置明确的解锁阶段条件。",
+        "达到条件后，用户可进入情景对话模拟功能。",
+        "情景对话模拟内容可结合日常交流或求职场景。",
+        "用户能够在模拟中进行多轮对话练习。"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "step_ids": [
+        "R012-S01",
+        "R012-S02"
+      ]
+    },
+    {
+      "id": "R013",
+      "title": "个性化复习与加强训练",
+      "description": "AI应支持为用户定制复习和强化训练方案，重点补足用户薄弱点，并满足用户对特定练习方式的个性化需求。",
+      "acceptance_criteria": [
+        "系统能够识别用户的薄弱知识点。",
+        "AI可针对薄弱点生成专属复习任务。",
+        "AI可根据用户表现调整强化训练内容。",
+        "用户获得的复习与训练计划与个人学习记录相关联。"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "step_ids": [
+        "R013-S01",
+        "R013-S02"
+      ]
+    }
+  ],
   "current_step": 0,
   "mailbox": [],
   "current_agent": "chat",
@@ -29,7 +812,7 @@
   "trigger_plan": false,
   "interface_refresh": false,
   "last_user_action": null,
-  "mode": "chat",
+  "mode": "planning",
   "ready_for_plan": true,
   "suggested_actions": [
     {

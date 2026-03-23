@@ -2,7 +2,7 @@ import json
 import logging
 import re
 from typing import Dict, List
-
+from pprint import pprint
 from llm.openai_client import call_gpt
 from agent.state import AgentState, PlannerOutput, Requirement, Step
 
@@ -97,13 +97,30 @@ def planner_node(state: AgentState):
     ]
 
     try:
-        response = call_gpt(messages=llm_messages, tools=None)
+        response = call_gpt(
+            messages=llm_messages,
+            tools=None,
+            # response_format={"type": "json_object"},
+            temperature=0.3,
+        )
         content = response["choices"][0]["message"]["content"]
+        pprint(f"llm resoibe {content} llm repsonse")
         json_text = extract_json_from_markdown(content)
         data = PlannerOutput.model_validate_json(json_text)
     except Exception as e:
         logger.error("LLM call failed in planner node: %s", str(e))
-        raise
+        return {
+            "trigger_plan": False,
+            "interface_refresh": False,
+            "current_agent": "planner",
+            "messages": state.messages
+            + [
+                {
+                    "role": "assistant",
+                    "content": "规划生成失败：模型返回了非 JSON 结构，请重试一次或补充更明确的需求。",
+                }
+            ],
+        }
 
     old_plan = {s.id: s for s in (state.plan or [])}
     new_plan: List[Step] = []

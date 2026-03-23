@@ -9,13 +9,14 @@ from langchain_core.utils.function_calling import convert_to_openai_tool
 from agent.state import AgentState 
 from config.env_setting import BASE_URL
 from config.env_setting import BASE_KEY
+ 
 
 API_URL = f"{BASE_URL}/v1/chat/completions"
 API_KEY = BASE_KEY
 
 OPENAI_TOOLS = [convert_to_openai_tool(t) for t in TOOLS]
 
-def call_gpt(messages, model="gpt-5.4",response_format: str = None, tools: list = None, temperature: float = 0.2):
+def call_gpt_requirements(messages, model="gpt-5.4",response_format: str = None, tools: list = None, temperature: float = 0.6):
 
     headers = {
         "Authorization": f"Bearer {API_KEY}",
@@ -28,16 +29,16 @@ def call_gpt(messages, model="gpt-5.4",response_format: str = None, tools: list 
         "temperature": temperature # 默认加上低温，防止发散
         # "max_tokens": max_tokens    # 确保代码生成的上下文长度足够
     }
-    # 核心逻辑：工具调用和 JSON 模式的平衡
-    if tools:
-        body["tools"] = tools
-        body["tool_choice"] = "auto"
-        body["temperature"]= 0.3
-        # 注意：开启工具时，通常不设置 response_format 为 json_object
+    # # 核心逻辑：工具调用和 JSON 模式的平衡
+    # if tools:
+    #     body["tools"] = tools
+    #     body["tool_choice"] = "auto"
+    #     body["temperature"]= 0.3
+    #     # 注意：开启工具时，通常不设置 response_format 为 json_object
     
-    if response_format:
-        body["response_format"] = response_format
-        body["temperature"]= 0.1
+    # if response_format:
+    #     body["response_format"] = response_format
+    #     body["temperature"]= 0.1
 
 
     resp = requests.post(API_URL, json=body, headers=headers)

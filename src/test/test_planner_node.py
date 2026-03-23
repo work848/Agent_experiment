@@ -15,6 +15,7 @@ def test_planner_node_simple():
                 "content": "build a python calculator with add and sub functions"
             }
         ],
+        "requirements":[],
         "plan": [],
         "workspace_root": "./",
         "current_step": 0

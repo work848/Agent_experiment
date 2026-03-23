@@ -20,6 +20,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -39,7 +40,8 @@ class ChatRequest(BaseModel):
     interface_refresh: bool = False
     last_user_action: Optional[UserAction] = None
     next_node: Optional[NextNode] = None
-    mode: Mode = Mode.CHAT
+    mode: Mode = Mode.CHAT  
+    workspace_root:str
 
 
 def _to_plain(value: Any) -> Any:
@@ -204,7 +206,7 @@ def chat(req: ChatRequest):
         session_state = handle_user_action(effective_last_user_action, session_state)
         req_mode = session_state.mode
         req_trigger_plan = session_state.trigger_plan
-        req_next_node = session_state.next_node
+        req_next_node = session_state.next_node or NextNode.CHAT
     else:
         req_mode = req.mode
         req_trigger_plan = req.trigger_plan
@@ -213,7 +215,7 @@ def chat(req: ChatRequest):
     state = AgentState(
         session_id=req.session_id,
         messages=session.get("messages", []),
-        workspace_root=None,
+        workspace_root=req.workspace_root,
         plan=session.get("plan"),
         requirements=_normalize_requirements(session.get("requirements", [])),
         current_step=session.get("current_step", 0),

@@ -3,8 +3,9 @@ import re
 from typing import Dict, List
 
 from pydantic import BaseModel, Field
-
-from src.llm.openai_client_normal import call_gpt
+from pprint import pprint
+from llm.openai_client_normal import call_gpt
+from llm.llm_requirements_client import call_gpt_requirements
 from agent.state import AgentState, Mode, NextNode, Requirement, RequirementStatus
 
 
@@ -74,25 +75,25 @@ def _next_requirement_id(existing_ids: List[str]) -> str:
 def _extract_requirements(messages: List[Dict]) -> List[ExtractedRequirement]:
     schema = json.dumps(RequirementExtractionOutput.model_json_schema(), ensure_ascii=False, indent=2)
     system_prompt = f"""
-You extract product requirements from conversation.
+        you are an expert requirement analysis product requirements from conversation.
+        Return only JSON, matching this schema exactly:
+        {schema}
 
-Return only JSON, matching this schema exactly:
-{schema}
+        if you cant output json format, the output i cant do it
+        Rules:
+        - Return normalized requirements without IDs.
+        - title should be concise.
+        - description should be specific and actionable.
+        - acceptance_criteria should be concrete and testable.
+        - priority range is 1 (highest) to 5 (lowest).
+        """
 
-Rules:
-- Return normalized requirements without IDs.
-- title should be concise.
-- description should be specific and actionable.
-- acceptance_criteria should be concrete and testable.
-- priority range is 1 (highest) to 5 (lowest).
-"""
-
-    response = call_gpt(
+    response = call_gpt_requirements(
         messages=[{"role": "system", "content": system_prompt}] + messages[-8:],
-        tools=None,
-        temperature=0,
+        temperature=0.7,
     )
     content = response["choices"][0]["message"]["content"]
+    pprint(f"requirement:{content}")
     json_text = _extract_json_from_markdown(content)
     parsed = RequirementExtractionOutput.model_validate_json(json_text)
     return parsed.requirements
@@ -119,7 +120,7 @@ def _reconcile_requirements(existing: List[Requirement], extracted: List[Extract
                 )
             )
             continue
-
+        pprint(f"提取的需求{extracted}")
         new_id = _next_requirement_id(all_ids)
         all_ids.append(new_id)
         reconciled.append(
@@ -137,17 +138,41 @@ def _reconcile_requirements(existing: List[Requirement], extracted: List[Extract
     return reconciled
 
 
+def _build_fallback_requirement(messages: List[Dict], existing_ids: List[str]) -> Requirement:
+    last_user = ""
+    for m in reversed(messages):
+        if isinstance(m, dict) and m.get("role") == "user":
+            last_user = str(m.get("content") or "").strip()
+            break
+
+    text = last_user or "User provided app requirements"
+    title = text.split("\n", 1)[0][:30].strip() or "Core requirement"
+    description = text[:500]
+
+    return Requirement(
+        id=_next_requirement_id(existing_ids),
+        title=title,
+        description=description,
+        acceptance_criteria=["Generate an initial executable plan from this requirement"],
+        priority=2,
+        status=RequirementStatus.PENDING,
+        step_ids=[],
+    )
+
+
 def chat_node(state: AgentState):
     messages = state.messages
     user_message_count = sum(
         1 for m in messages if isinstance(m, dict) and m.get("role") == "user"
     )
-    extraction_ready = user_message_count >= 3
+
+    ready_for_plan = _is_ready_for_plan(messages)
+    extraction_ready = user_message_count >= 3 or ready_for_plan
 
     was_ready_for_plan = bool(state.ready_for_plan)
-    ready_for_plan = _is_ready_for_plan(messages) if extraction_ready else False
 
     requirements = state.requirements or []
+    pprint(f"{requirements}")
     if extraction_ready:
         try:
             extracted = _extract_requirements(messages)
@@ -155,7 +180,11 @@ def chat_node(state: AgentState):
         except Exception:
             requirements = requirements
 
-    if state.mode == Mode.CHAT and was_ready_for_plan:
+    if ready_for_plan and not requirements:
+        fallback = _build_fallback_requirement(messages, [r.id for r in requirements])
+        requirements = requirements + [fallback]
+
+    if state.mode == Mode.CHAT and ready_for_plan:
         return {
             "ready_for_plan": True,
             "suggested_actions": CTA_ACTIONS,
