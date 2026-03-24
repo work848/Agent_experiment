@@ -47,7 +47,11 @@ def interface_node(state: AgentState):
 
     if not steps_to_design:
         # 无需变动，直接返回空字典（表示不更新状态）
-        return {}
+        return {
+            "interface_refresh": False,
+            "current_agent": "interface",
+            "trigger_plan": False,
+        }
 
     # 2️⃣ 获取上下文并调用 LLM
     skeleton_context = get_workspace_skeleton_direct(state.workspace_root)

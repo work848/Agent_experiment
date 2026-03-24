@@ -39,10 +39,14 @@ def central_coordinator(state: AgentState):
         return "chat"
     if state.mode == Mode.PLANNING:
         if state.trigger_plan:
+            print("plan is here")
             return "planner"
         if state.interface_refresh:
             return  "interface"
-
+        if state.current_agent == "planner":
+            return "interface"
+        if state.current_agent == "interface":
+            return END
     if state.mode == Mode.EXECUTING:
             return END
 

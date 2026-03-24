@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -40,8 +40,8 @@ class ChatRequest(BaseModel):
     interface_refresh: bool = False
     last_user_action: Optional[UserAction] = None
     next_node: Optional[NextNode] = None
-    mode: Mode = Mode.CHAT  
-    workspace_root:str
+    mode: Mode = Mode.CHAT
+    workspace_root: Optional[str] = None
 
 
 def _to_plain(value: Any) -> Any:
@@ -157,8 +157,14 @@ def chat(req: ChatRequest):
             "consumed_last_user_action": None,
             "ready_for_plan": False,
             "suggested_actions": [],
+            "workspace_root": None,
         },
     )
+
+    resolved_workspace_root = req.workspace_root or session.get("workspace_root") or os.getenv("WORKSPACE_ROOT")
+    if not resolved_workspace_root:
+        raise HTTPException(status_code=400, detail="workspace_root is required. Pass it in the payload or set WORKSPACE_ROOT env variable.")
+    session["workspace_root"] = resolved_workspace_root
 
     message_content: Optional[str] = None
     if isinstance(req.message, list):
@@ -187,7 +193,7 @@ def chat(req: ChatRequest):
         session_state = AgentState(
             session_id=req.session_id,
             messages=session.get("messages", []),
-            workspace_root=None,
+            workspace_root=resolved_workspace_root,
             plan=session.get("plan"),
             requirements=_normalize_requirements(session.get("requirements", [])),
             current_step=session.get("current_step", 0),
@@ -215,7 +221,7 @@ def chat(req: ChatRequest):
     state = AgentState(
         session_id=req.session_id,
         messages=session.get("messages", []),
-        workspace_root=req.workspace_root,
+        workspace_root=resolved_workspace_root,
         plan=session.get("plan"),
         requirements=_normalize_requirements(session.get("requirements", [])),
         current_step=session.get("current_step", 0),
@@ -262,7 +268,7 @@ def chat(req: ChatRequest):
         AgentState(
             session_id=req.session_id,
             messages=session.get("messages", []),
-            workspace_root=None,
+            workspace_root=resolved_workspace_root,
             plan=session.get("plan"),
             requirements=_normalize_requirements(session.get("requirements", [])),
             current_step=session.get("current_step", 0),

@@ -24,7 +24,15 @@ Rules:
 - dependencies must reference step IDs (string IDs), not requirement IDs.
 - Return JSON only.
 """
-
+def get_requirement_from_txt():
+    requirements_path = "src/memory/state/Requirement.txt"
+    lines: List[str] = []
+    with open(requirements_path, "r", encoding="utf-8") as f:
+        for line in f:
+            clean_line = line.strip()
+            if clean_line and not clean_line.startswith("#"):
+                lines.append(clean_line)
+    return "\n".join(lines)   
 
 def extract_json_from_markdown(text: str) -> str:
     match = re.search(r"```json\s*(\{.*?\})\s*```", text, re.S)
@@ -78,7 +86,13 @@ def planner_node(state: AgentState):
     state.current_agent = "planner"
 
     requirements = state.requirements or []
-    if not requirements:
+
+    if requirements == []:
+        requirements_context = get_requirement_from_txt()
+    else:
+        requirements_context = _build_requirements_context(requirements)
+        
+    if not requirements_context:
         logger.warning("Planner triggered without requirements; returning safe no-op")
         return {
             "trigger_plan": False,
@@ -86,8 +100,6 @@ def planner_node(state: AgentState):
             "current_agent": "planner",
             "messages": state.messages + [{"role": "assistant", "content": "当前没有可规划的需求，请先在聊天中补充需求。"}],
         }
-
-    requirements_context = _build_requirements_context(requirements)
     llm_messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {
