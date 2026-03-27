@@ -198,6 +198,14 @@
 }
 ```
 
+### `GET /state`
+返回当前会话（或最近一次保存）的整体状态，供前端在页面加载时恢复 plan/requirements。
+
+**Query**
+- `session_id`（可选）：若提供且该 session 仍在内存中，则返回其最新状态；否则回退到 `src/memory/state/current_state.json` 或最近一次版本化文件。
+
+**Response** 同 `POST /chat`（plan/requirements/current_step/agents/logs/messages/ready_for_plan/actions）。
+
 ---
 
 ## 9. 注意事项

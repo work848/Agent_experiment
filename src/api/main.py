@@ -12,6 +12,7 @@ from agent.state import AgentState, Mode, NextNode, UserAction
 from utils.requirements_export import export_requirements_snapshot
 from utils.user_action import handle_user_action
 from utils.save_state import save_state
+from utils.restore_state import load_state, load_latest_state
 
 load_dotenv(dotenv_path="APIKey.env")
 
@@ -138,9 +139,71 @@ def _derive_logs(result: Dict[str, Any]) -> List[str]:
     return []
 
 
+def _build_state_response(state: AgentState) -> Dict[str, Any]:
+    plan = _normalize_plan(getattr(state, "plan", []))
+    requirements = _normalize_requirements(getattr(state, "requirements", []))
+    return {
+        "plan": plan,
+        "requirements": requirements,
+        "current_step": int(getattr(state, "current_step", 0) or 0),
+        "agents": _derive_agents({"current_agent": getattr(state, "current_agent", NextNode.CHAT)}),
+        "logs": _derive_logs({"mailbox": getattr(state, "mailbox", [])}),
+        "messages": list(getattr(state, "messages", []))[-12:],
+        "ready_for_plan": bool(getattr(state, "ready_for_plan", False)),
+        "actions": getattr(state, "suggested_actions", []),
+    }
+
+
+def _session_to_state(session_id: str, session: Dict[str, Any]) -> AgentState:
+    return AgentState(
+        session_id=session_id,
+        messages=session.get("messages", []),
+        workspace_root=session.get("workspace_root"),
+        plan=session.get("plan"),
+        requirements=_normalize_requirements(session.get("requirements", [])),
+        current_step=session.get("current_step", 0),
+        mailbox=session.get("mailbox", []),
+        mode=session.get("mode", Mode.CHAT),
+        trigger_plan=False,
+        interface_refresh=False,
+        last_user_action=None,
+        next_node=session.get("next_node", NextNode.CHAT),
+        tool_call=None,
+        iterations=0,
+        max_iterations=5,
+        ready_for_plan=bool(session.get("ready_for_plan", False)),
+        suggested_actions=session.get("suggested_actions", []),
+    )
+
+
+def _load_session_state(session_id: Optional[str]) -> Optional[AgentState]:
+    if not session_id:
+        return None
+    session = conversations.get(session_id)
+    if not session:
+        return None
+    return _session_to_state(session_id, session)
+
+
+def _load_persisted_state() -> Optional[AgentState]:
+    state = load_state(AgentState)
+    if state is not None:
+        return state
+    return load_latest_state(AgentState)
 @app.get("/")
 def health():
     return {"status": "Agent running"}
+
+
+@app.get("/state")
+def get_state(session_id: Optional[str] = None):
+    state = _load_session_state(session_id)
+    if state is None:
+        state = _load_persisted_state()
+    if state is None:
+        raise HTTPException(status_code=404, detail="No saved state available")
+
+    return _build_state_response(state)
 
 
 @app.post("/chat")

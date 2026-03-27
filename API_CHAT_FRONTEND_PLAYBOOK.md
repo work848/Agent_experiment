@@ -201,8 +201,10 @@ type UiState = {
 
 ## 6.2 session_id 变化导致上下文丢失
 规避：
-- 页面生命周期内固定一个 `session_id`
-- 刷新页面后从本地存储恢复 `session_id`
+- 页面加载时：
+  - 优先从本地存储恢复 `session_id`
+  - 若存在 `session_id`，立即调用 `GET /state?session_id=<id>`，若 HTTP 200 则用响应覆盖本地 `messages/plan/requirements/current_step/actions/ready_for_plan`
+  - 若返回 404 或无 session，可自动进入空白状态并等待用户输入
 
 ## 6.3 仅传部分 plan 导致字段丢失
 规避：
