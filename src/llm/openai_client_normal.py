@@ -15,7 +15,7 @@ API_KEY = BASE_KEY
 
 OPENAI_TOOLS = [convert_to_openai_tool(t) for t in TOOLS]
 
-def call_gpt(messages, model="gpt-5.4",response_format: str = None, tools: list = None, temperature: float = 0.2):
+def call_gpt(messages, model="deepseek-chat",response_format: str = None, tools: list = None, temperature: float = 0.2):
 
     headers = {
         "Authorization": f"Bearer {API_KEY}",

@@ -3,5 +3,5 @@ from dotenv import load_dotenv
 
 load_dotenv("APIKey.env")
 
-BASE_URL = "https://huxiaonb.top"
-BASE_KEY = os.getenv("HUXIAONB")
+BASE_URL = "https://api.deepseek.com"
+BASE_KEY = os.getenv("deepseek")  # 从环境变量中获取 API Key

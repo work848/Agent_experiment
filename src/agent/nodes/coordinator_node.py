@@ -1,63 +1,69 @@
-from langgraph.graph import StateGraph, END
-from agent.state import AgentState
-from agent.state import Mode
+from langgraph.graph import END
+from agent.state import AgentState, Mode, NextNode, RunStatus
 from utils.user_action import handle_user_action
 
 
+def _node_value(node):
+    if isinstance(node, NextNode):
+        return node.value
+    return node
+
 
 def central_coordinator(state: AgentState):
-    # 工具调用流程
     if state.tool_call:
-        return state.current_agent
+        return _node_value(state.current_agent)
 
-    # 邮件调用流程
     for mail in state.mailbox:
         if not mail.is_resolved:
             return mail.target
+
     if state.success:
         return END
 
+    if state.next_node == NextNode.ERROR:
+        return NextNode.ERROR.value
 
-    #用户流程
     if state.last_user_action:
         state = handle_user_action(state.last_user_action, state)
-        state.last_user_action = None  # 防止重复触发
-        # ✅ 如果 handle_user_action 已经指定 next_node，直接返回
+        state.last_user_action = None
         if state.next_node:
-            next_node = state.next_node  # 先存
-            state.next_node = None       # 再清
-            return next_node.value
+            next_node = state.next_node
+            state.next_node = None
+            return _node_value(next_node)
 
-    # 正常调度逻辑
+    current_agent = _node_value(state.current_agent)
+
     if state.mode == Mode.CHAT:
-        # CHAT 模式每次请求只执行一轮：
-        # 如果最新一条已经是 assistant 回复，则结束，避免 chat->coordinator 死循环
         if state.messages:
             last_message = state.messages[-1]
             if isinstance(last_message, dict) and last_message.get("role") == "assistant":
                 return END
-        return "chat"
+        return NextNode.CHAT.value
+
     if state.mode == Mode.PLANNING:
         if state.trigger_plan:
-            print("plan is here")
-            return "planner"
+            return NextNode.PLANNER.value
         if state.interface_refresh:
-            return  "interface"
-        if state.current_agent == "planner":
-            return "interface"
-        if state.current_agent == "interface":
+            return NextNode.INTERFACE.value
+        if current_agent == NextNode.PLANNER.value:
+            return NextNode.INTERFACE.value
+        if current_agent in {NextNode.INTERFACE.value, NextNode.ERROR.value}:
             return END
+
     if state.mode == Mode.EXECUTING:
+        if state.next_node == NextNode.TESTER:
+            return NextNode.TESTER.value
+        if state.approval_required:
             return END
+        if state.run_status in {
+            RunStatus.WAITING_APPROVAL,
+            RunStatus.BLOCKED,
+            RunStatus.FAILED,
+            RunStatus.SUCCESS,
+        }:
+            return END
+        if state.run_status == RunStatus.RUNNING:
+            return NextNode.CODER.value
+        return END
 
-    # if state.current_agent == "coder":
-    #     return "executor"
-
-    # if state.current_agent == "executor":
-    #     return "tester"
-
-    # if state.current_agent == "tester":
-    #     return END
     return END
-
-

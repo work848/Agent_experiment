@@ -14,7 +14,8 @@ API_KEY = BASE_KEY
 
 OPENAI_TOOLS = [convert_to_openai_tool(t) for t in TOOLS]
 
-def call_gpt(messages, model="gpt-5.2-codex",response_format: str = None, tools: list = None, temperature: float = 0.2):
+# used for coder
+def call_gpt(messages, model="deepseek-coder",response_format: str = None, tools: list = None, temperature: float = 0.2):
 
     headers = {
         "Authorization": f"Bearer {API_KEY}",

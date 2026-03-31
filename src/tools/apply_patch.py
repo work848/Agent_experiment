@@ -1,7 +1,5 @@
 import os
 
-from sympy import content
-
 from tools.base_tool import tool
 from config.workspace_config import BLOCKED_KEYWORDS, WORKSPACE, BLOCKED_FILES
 
@@ -47,7 +45,7 @@ def apply_patch(
         return "Error: .git access denied"
     # -------- 安全检查4：禁止危险关键词 --------
     for keyword in BLOCKED_KEYWORDS:
-        if keyword in content:
+        if keyword in new_code:
             return f"Error: dangerous keyword detected: {keyword}"
     
     try:

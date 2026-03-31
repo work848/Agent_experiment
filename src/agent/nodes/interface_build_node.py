@@ -1,7 +1,19 @@
 import json
+import uuid
+from datetime import datetime, timezone
 from typing import List, Dict
 from llm.openai_client import call_gpt
-from agent.state import InterfaceDesignOutput, AgentState, StepStatus
+from agent.state import (
+    InterfaceDesignOutput,
+    AgentState,
+    ApprovalRequest,
+    ApprovalStatus,
+    ApprovalType,
+    NextNode,
+    PlanStatus,
+    RunStatus,
+    StepStatus,
+)
 from code_indexer.get_workspace_skeleton import get_workspace_skeleton_direct
 from utils.extract_json import extract_json
 
@@ -26,9 +38,24 @@ IMPORTANT RULES:
 - DO NOT access files
 - DO NOT attempt to read uploads
 - Only return structured interface definitions
+- A step may require multiple functions or classes. Put the primary interface in `interface` and any additional ones in `extra_interfaces`.
 
 Return JSON only.
 """
+
+
+def _make_execute_plan_approval() -> ApprovalRequest:
+    return ApprovalRequest(
+        id=str(uuid.uuid4()),
+        type=ApprovalType.EXECUTE_PLAN,
+        title="Execute plan",
+        description="Plan is ready. Approve to start execution.",
+        created_at=datetime.now(timezone.utc).isoformat(),
+        blocking=True,
+        status=ApprovalStatus.PENDING,
+        requested_action="execute_plan",
+        reason="Plan and interface definitions are complete.",
+    )
 
 
 def interface_node(state: AgentState):
@@ -38,25 +65,27 @@ def interface_node(state: AgentState):
     3. 返回时将对象转回 Dict
     """
     print("PLAN STEPS:")
-    # for s in state.plan:
-    #     print(s)
     steps_to_design = [
         s for s in state.plan
         if s.interface is None and s.status == StepStatus.PENDING
     ]
 
     if not steps_to_design:
-        # 无需变动，直接返回空字典（表示不更新状态）
+        approval = _make_execute_plan_approval()
         return {
             "interface_refresh": False,
-            "current_agent": "interface",
+            "current_agent": NextNode.INTERFACE,
             "trigger_plan": False,
+            "retrying_node": None,
+            "plan_status": PlanStatus.READY,
+            "run_status": RunStatus.WAITING_APPROVAL,
+            "approval_required": True,
+            "approval_type": ApprovalType.EXECUTE_PLAN,
+            "approval_payload": None,
+            "pending_approvals": state.pending_approvals + [approval],
         }
 
-    # 2️⃣ 获取上下文并调用 LLM
     skeleton_context = get_workspace_skeleton_direct(state.workspace_root)
-
-    # 3️⃣ 构造 prompt (Pydantic 对象在 f-string 中会自动调用 __str__)
     llm_messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {
@@ -65,36 +94,59 @@ def interface_node(state: AgentState):
         }
     ]
 
-    # 4️⃣ 调用 LLM
-    response = call_gpt(messages=llm_messages, tools=None)
-    content = response["choices"][0]["message"]["content"]
-    # print(json.dumps(response, indent=2, ensure_ascii=False, default=str))
-    json_text = extract_json(content)
+    try:
+        response = call_gpt(messages=llm_messages, tools=None)
+        content = response["choices"][0]["message"]["content"]
+        json_text = extract_json(content)
+        design_data = InterfaceDesignOutput.model_validate_json(json_text)
+    except Exception:
+        return {
+            "trigger_plan": False,
+            "interface_refresh": False,
+            "current_agent": NextNode.INTERFACE,
+            "last_failed_node": NextNode.INTERFACE,
+            "last_error_message": "接口节点（interface）生成失败。",
+            "next_node": NextNode.ERROR,
+            "retrying_node": None,
+            "progress_text": "当前进度：开发计划已生成，等待重新补全接口定义。",
+            "run_status": RunStatus.BLOCKED,
+            "approval_required": False,
+            "approval_type": None,
+            "approval_payload": None,
+        }
 
-    # 验证并解析 LLM 输出
-    design_data = InterfaceDesignOutput.model_validate_json(json_text)
-    # print("LLM returned interface design:", design_data)
-
-    # 5️⃣ 增量更新 (在对象层面操作)
-    # 创建一个 ID 到 interface 对象的映射
-    design_map = {item.step_id: item.interface for item in design_data.interfaces}
-
+    design_map = {item.step_id: item for item in design_data.interfaces}
     new_plan = []
 
     for step in state.plan:
         if step.id in design_map:
-            # 更新 interface 并返回新对象
+            task = design_map[step.id]
             new_step = step.model_copy(
-                update={"interface": design_map[step.id]}
+                update={
+                    "interface": task.interface,
+                    "extra_interfaces": task.extra_interfaces,
+                }
             )
         else:
             new_step = step
         new_plan.append(new_step)
 
-    # 4️⃣ 返回更新：只返回变动的部分
-    # LangGraph 会自动把这些值 update 到全局 state 中
+    approval = _make_execute_plan_approval()
     return {
         "plan": new_plan,
-        "current_agent": "interface",
+        "current_agent": NextNode.INTERFACE,
         "interface_refresh": False,
+        "trigger_plan": False,
+        "last_failed_node": None,
+        "last_error_message": None,
+        "retry_count": 0,
+        "retrying_node": None,
+        "progress_text": "当前进度：接口定义已补全，等待确认执行。",
+        "next_node": None,
+        "plan_status": PlanStatus.READY,
+        "run_status": RunStatus.WAITING_APPROVAL,
+        "approval_required": True,
+        "approval_type": ApprovalType.EXECUTE_PLAN,
+        "approval_payload": None,
+        "pending_approvals": state.pending_approvals + [approval],
     }

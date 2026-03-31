@@ -1,13 +1,13 @@
 import os
 from dotenv import load_dotenv
-
+from tools.base_tool import tool
 # 加载 workspace.env
 from config.workspace_config import ALLOWED_EXT, BLOCKED_KEYWORDS, MAX_FILE_SIZE, WORKSPACE, BLOCKED_FILES
 
 if not WORKSPACE:
     raise ValueError("WORKSPACE not defined in workspace.env")
 
-
+@tool
 def write_file(path: str, content: str) -> str:
     """
     Write content to a file inside the Agent_project directory.

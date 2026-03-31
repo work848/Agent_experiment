@@ -1,9 +1,21 @@
 
 import json
 import os
+from typing import Optional
 
 
 import glob
+
+def load_session_state(state_cls, session_id: str):
+    path = f"src/memory/state/sessions/{session_id}.json"
+    if not os.path.exists(path):
+        return None
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    state = state_cls.model_validate(data)
+    print(f"[Checkpoint] Session state loaded <- {path}")
+    return state
+
 
 def load_latest_state(state_cls):
     files = glob.glob("src/memory/state/state_*.json")

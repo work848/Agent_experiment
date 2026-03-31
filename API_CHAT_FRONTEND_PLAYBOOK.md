@@ -48,6 +48,10 @@ type UiState = {
   currentStep: number
   agents: { planner: string; coder: string; tester: string }
   logs: string[]
+  lastErrorMessage: string | null
+  retryCount: number
+  retryingNode: 'planner' | 'interface' | null
+  progressText: string | null
 }
 ```
 
@@ -171,6 +175,16 @@ type UiState = {
 ### 4.4 Agent 状态条
 - 使用 `agents` 渲染“planner/coder/tester 是否 working”
 
+### 4.5 重试态 / 进度态
+- 当 `retrying_node` 不为 `null` 时：展示“系统正在自动重试 {retrying_node}”
+- 同时展示 `progress_text`，不要自己拼文案
+- `messages` 最后一条 assistant 通常也会带“正在自动重试 1/1”提示，可直接显示在聊天流里
+- 当 `last_error_message` 非空且 `retrying_node=null` 且最后一条 assistant 为失败提示时，可展示失败态 banner
+
+推荐映射：
+- `retrying_node='planner'`：显示“正在重新生成开发计划”
+- `retrying_node='interface'`：显示“正在重新补全接口定义”
+
 ---
 
 ## 5. 推荐时序（避免误判）
@@ -237,6 +251,10 @@ function syncFromServer(data: any) {
   ui.currentStep = data.current_step ?? 0
   ui.agents = data.agents ?? { planner: 'idle', coder: 'idle', tester: 'idle' }
   ui.logs = data.logs ?? []
+  ui.lastErrorMessage = data.last_error_message ?? null
+  ui.retryCount = data.retry_count ?? 0
+  ui.retryingNode = data.retrying_node ?? null
+  ui.progressText = data.progress_text ?? null
 }
 ```
 
@@ -250,6 +268,10 @@ function syncFromServer(data: any) {
 - [ ] `plan.interface` 字段可见
 - [ ] 编辑后 `save_plan` 能持久化
 - [ ] `modify_plan` 能重生并更新 `plan`
+- [ ] planner 首次失败时，返回 `retrying_node=planner`、`retry_count=1`
+- [ ] interface 首次失败时，返回 `retrying_node=interface`、`retry_count=1`
+- [ ] 自动重试成功后，`retrying_node=null`、`retry_count=0`
+- [ ] 自动重试失败后，`last_error_message` 和最终失败文案可见
 - [ ] 连续普通 chat 不触发递归错误
 
 ---

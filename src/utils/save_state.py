@@ -4,10 +4,15 @@ from typing import Any
 
 from datetime import datetime
 
-def save_state_versioned(state):
-    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-    path = f"src/memory/state/state_{ts}.json"
-    save_state(state, path)
+
+def save_session_state(state: Any):
+    session_id = state.session_id
+    path = f"src/memory/state/sessions/{session_id}.json"
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    state_dict = state.model_dump(mode="json")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(state_dict, f, indent=2, ensure_ascii=False)
+    print(f"[Checkpoint] Session state saved -> {path}")
 
 
 def save_state(state: Any, filepath="src/memory/state/current_state.json"):

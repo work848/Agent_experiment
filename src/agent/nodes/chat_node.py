@@ -161,6 +161,9 @@ def _build_fallback_requirement(messages: List[Dict], existing_ids: List[str]) -
 
 
 def chat_node(state: AgentState):
+    if state.mode != Mode.CHAT:
+        return {}
+
     messages = state.messages
     user_message_count = sum(
         1 for m in messages if isinstance(m, dict) and m.get("role") == "user"

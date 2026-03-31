@@ -4,7 +4,7 @@ import re
 from typing import Dict, List
 from pprint import pprint
 from llm.openai_client import call_gpt
-from agent.state import AgentState, PlannerOutput, Requirement, Step
+from agent.state import AgentState, NextNode, PlannerOutput, PlanStatus, RunStatus, ApprovalType, Requirement, Step
 
 logger = logging.getLogger(__name__)
 
@@ -99,6 +99,11 @@ def planner_node(state: AgentState):
             "interface_refresh": False,
             "current_agent": "planner",
             "messages": state.messages + [{"role": "assistant", "content": "当前没有可规划的需求，请先在聊天中补充需求。"}],
+            "plan_status": PlanStatus.DRAFT,
+            "run_status": RunStatus.IDLE,
+            "approval_required": False,
+            "approval_type": None,
+            "approval_payload": None,
         }
     llm_messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -124,14 +129,16 @@ def planner_node(state: AgentState):
         return {
             "trigger_plan": False,
             "interface_refresh": False,
-            "current_agent": "planner",
-            "messages": state.messages
-            + [
-                {
-                    "role": "assistant",
-                    "content": "规划生成失败：模型返回了非 JSON 结构，请重试一次或补充更明确的需求。",
-                }
-            ],
+            "current_agent": NextNode.PLANNER,
+            "last_failed_node": NextNode.PLANNER,
+            "last_error_message": "规划节点（planner）生成失败。",
+            "next_node": NextNode.ERROR,
+            "retrying_node": None,
+            "progress_text": "当前进度：需求已整理，等待重新生成开发计划。",
+            "run_status": RunStatus.BLOCKED,
+            "approval_required": False,
+            "approval_type": None,
+            "approval_payload": None,
         }
 
     old_plan = {s.id: s for s in (state.plan or [])}
@@ -158,4 +165,16 @@ def planner_node(state: AgentState):
         "current_step": 0,
         "trigger_plan": False,
         "interface_refresh": True,
+        "current_agent": NextNode.PLANNER,
+        "last_failed_node": None,
+        "last_error_message": None,
+        "retry_count": 0,
+        "retrying_node": None,
+        "progress_text": "当前进度：开发计划已生成，正在补全接口定义。",
+        "next_node": None,
+        "plan_status": PlanStatus.DRAFT,
+        "run_status": RunStatus.IDLE,
+        "approval_required": False,
+        "approval_type": None,
+        "approval_payload": None,
     }

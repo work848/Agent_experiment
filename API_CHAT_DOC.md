@@ -52,6 +52,7 @@
 - `message`：用户输入；若为数组会按换行拼接。
 - `plan`：前端改过的 plan/interface。传入后会**先覆盖会话中的 plan**。
 - `last_user_action`：用户动作（边沿触发，避免重复执行）。
+- `workspace_root`：工作区根目录。首次请求必须传，或由后端环境变量 `WORKSPACE_ROOT` 提供。
 - 其他字段通常由系统内部流转使用，前端一般不用频繁手动控制。
 
 ---
@@ -90,9 +91,36 @@
   "actions": [
     {"action": "generate_plan", "label": "生成计划"},
     {"action": "continue_chat", "label": "继续补充"}
-  ]
+  ],
+  "last_error_message": "规划节点（planner）生成失败。",
+  "retry_count": 1,
+  "retrying_node": "planner",
+  "progress_text": "当前进度：需求已整理，正在重新生成开发计划。"
 }
 ```
+
+### 新增重试/进度字段说明
+- `last_error_message`：最近一次失败节点的错误摘要；无错误时为 `null`。
+- `retry_count`：当前节点已自动重试次数。成功后会重置为 `0`。
+- `retrying_node`：当前正在自动重试的节点名，可能为 `planner` / `interface`；无重试时为 `null`。
+- `progress_text`：可直接展示给用户的当前工作进度文案。
+
+### 字段返回时机
+- `planner` / `interface` 首次失败后：
+  - `retry_count=1`
+  - `retrying_node` 为失败节点名
+  - `progress_text` 描述当前正在自动重试的阶段
+  - `messages` 末尾会追加“正在自动重试 1/1”提示
+- 重试成功后：
+  - `retrying_node=null`
+  - `last_error_message=null`
+  - `retry_count=0`
+  - `progress_text` 更新为当前成功推进到的阶段
+- 重试仍失败后：
+  - `retrying_node=null`
+  - `last_error_message` 保留最后一次失败摘要
+  - `retry_count` 保持已使用次数
+  - `messages` 末尾会追加最终失败提示
 
 ---
 
@@ -204,7 +232,7 @@
 **Query**
 - `session_id`（可选）：若提供且该 session 仍在内存中，则返回其最新状态；否则回退到 `src/memory/state/current_state.json` 或最近一次版本化文件。
 
-**Response** 同 `POST /chat`（plan/requirements/current_step/agents/logs/messages/ready_for_plan/actions）。
+**Response** 同 `POST /chat`，并同样包含重试可视化字段：`last_error_message`、`retry_count`、`retrying_node`、`progress_text`。
 
 ---
 

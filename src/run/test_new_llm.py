@@ -8,12 +8,11 @@ from agent.state import AgentState
 from pprint import pprint
 load_dotenv()
 
-API_URL = "https://huxiaonb.top/v1/chat/completions"
-API_KEY = os.getenv("OPENAI_API_KEY")
-if not API_KEY:
-    raise RuntimeError("OPENAI_API_KEY not set in environment or .env file")
+API_URL = "https://api.deepseek.com/v1/chat/completions"
+API_KEY = "sk-9ae89b956b1341aa9d0a3b194f3b2581"
 
-def call_gpt(messages, model="gemini-2.0-flash",response_format: str = None, tools: list = None, temperature: float = 0.6, max_tokens: int = 4096):
+
+def call_gpt(messages, model="deepseek-coder",response_format: str = None, tools: list = None, temperature: float = 0.6, max_tokens: int = 4096):
 
     headers = {
         "Authorization": f"Bearer {API_KEY}",
