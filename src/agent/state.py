@@ -229,6 +229,18 @@ class EvidenceRecord(BaseModel):
     details: Dict[str, Any] = Field(default_factory=dict)
 
 
+class ToolEvent(BaseModel):
+    id: str
+    tool_name: str
+    status: str
+    arguments: Dict[str, Any] = Field(default_factory=dict)
+    result_preview: Optional[str] = None
+    error_message: Optional[str] = None
+    created_at: Optional[str] = None
+    source_agent: Optional[str] = None
+    step_id: Optional[str] = None
+
+
 class ValidationSummary(BaseModel):
     status: ValidationStatus
     summary: str
@@ -264,6 +276,8 @@ class AgentState(BaseModel):
     next_node: Optional[NextNode] = None
 
     tool_call: Optional[dict] = None
+    tool_events: List[ToolEvent] = Field(default_factory=list)
+    last_tool_event: Optional[ToolEvent] = None
     trigger_plan: bool = False
     interface_refresh: bool = False
 
@@ -303,6 +317,11 @@ class AgentState(BaseModel):
     risk_actions: List[RiskAction] = Field(default_factory=list)
     action_gate: Optional[ActionGate] = None
     run_summary: Optional[str] = None
+    last_saved_at: Optional[str] = None
+    last_restored_at: Optional[str] = None
+    persisted_file: Optional[str] = None
+    restored_from_disk: bool = False
+    updated_at: Optional[str] = None
 
 
 class StepDraft(BaseModel):

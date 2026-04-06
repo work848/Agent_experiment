@@ -1,7 +1,27 @@
 # Requirements Snapshot
 
-- [pending] R001: Hello, what can you help me wi (P2)
-  Description: Hello, what can you help me with?
+- [pending] R001: 用户密码登录 (P1)
+  Description: 实现基于用户名/邮箱和密码的传统登录流程。系统验证凭证正确后，用户将被重定向至应用首页。
   Acceptance Criteria:
-    1. Generate an initial executable plan from this requirement
-  Steps: R001-S01, R001-S02, R001-S03, R001-S04, R001-S05
+    1. 用户访问登录页面时，能看到用户名/邮箱输入框、密码输入框和提交按钮。
+    2. 输入正确的用户名（或邮箱）和对应的密码，点击登录按钮后，页面跳转至系统首页。
+    3. 输入错误的用户名或密码，点击登录按钮后，页面停留在登录页，并清晰提示“用户名或密码错误”。
+    4. 登录成功后，用户的登录状态得以保持，在浏览首页及其他页面时无需重新登录。
+  Steps: R001-S01, R001-S02, R001-S03, R001-S04
+
+- [pending] R002: 登录状态保持与首页跳转 (P2)
+  Description: 用户成功登录后，其会话状态应被记录，并自动导航至预设的首页。
+  Acceptance Criteria:
+    1. 成功登录后，浏览器地址栏的URL自动变更为首页地址。
+    2. 从首页刷新页面，用户依然保持登录状态，不会退回登录页。
+    3. 在已登录状态下，直接访问登录页URL，应自动跳转至首页，避免重复登录。
+  Steps: R002-S01, R002-S02, R002-S03, R002-S04
+
+- [pending] R003: 基础登录页与表单 (P3)
+  Description: 提供一个简洁的登录页面，包含必要的输入元素和基础交互。
+  Acceptance Criteria:
+    1. 登录页面包含明确的标题（如“用户登录”或“Sign In”）。
+    2. 表单包含两个带标签的输入字段：一个用于“用户名/邮箱”，一个用于“密码”（密码字段应隐藏输入内容）。
+    3. 提供一个标有“登录”或“Sign In”的主按钮用于提交表单。
+    4. 所有输入字段在获取焦点时有简单的视觉反馈（如边框高亮）。
+  Steps: R003-S01

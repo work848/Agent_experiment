@@ -42,7 +42,10 @@
       "Bash(echo \"REAL_EXIT=$?\")",
       "Bash(echo $?)",
       "Bash(.venv/Scripts/python.exe -m py_compile src/api/main.py)",
-      "Bash(.venv/Scripts/python.exe src/run/test_validation_upgrade.py)"
+      "Bash(.venv/Scripts/python.exe src/run/test_validation_upgrade.py)",
+      "Bash(npm run:*)",
+      "Bash(npm:*)",
+      "Bash(curl:*)"
     ]
   }
 }

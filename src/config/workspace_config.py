@@ -34,7 +34,13 @@ ALLOWED_EXT = {
     ".py",
     ".txt",
     ".json",
-    ".md"
+    ".md",
+    ".js",
+    ".jsx",
+    ".ts",
+    ".tsx",
+    ".html",
+    ".css",
 }
 # Agent 忽略的目录
 IGNORE_DIRS = {

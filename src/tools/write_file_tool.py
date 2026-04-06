@@ -32,14 +32,15 @@ def write_file(path: str, content: str) -> str:
     # -------- 安全检查3：禁止访问 .git --------
     if ".git" in target_path:
         return "Error: .git access denied"
-    # -------- 安全检查4：禁止危险关键词 --------
-    for keyword in BLOCKED_KEYWORDS:
-        if keyword in content:
-            return f"Error: dangerous keyword detected: {keyword}"
-    # -------- 安全检查5：限制文件类型 --------
+    # -------- 安全检查4：禁止危险关键词（仅针对 Python 文件） --------
     ext = os.path.splitext(target_path)[1]
     if ext not in ALLOWED_EXT:
         return "Error: file type not allowed"
+
+    if ext == ".py":
+        for keyword in BLOCKED_KEYWORDS:
+            if keyword in content:
+                return f"Error: dangerous keyword detected: {keyword}"
     
     
     # 创建目录

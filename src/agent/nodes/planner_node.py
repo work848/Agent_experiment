@@ -82,7 +82,7 @@ def planner_node(state: AgentState):
     if not state.trigger_plan:
         return {}
 
-    logger.info("Planner node started")
+    logger.info("[planner_node] start session=%s mode=%s", getattr(state, "session_id", "<unknown>"), state.mode)
     state.current_agent = "planner"
 
     requirements = state.requirements or []
@@ -91,9 +91,9 @@ def planner_node(state: AgentState):
         requirements_context = get_requirement_from_txt()
     else:
         requirements_context = _build_requirements_context(requirements)
-        
+
     if not requirements_context:
-        logger.warning("Planner triggered without requirements; returning safe no-op")
+        logger.warning("[planner_node] no requirements; returning no-op")
         return {
             "trigger_plan": False,
             "interface_refresh": False,
@@ -125,7 +125,7 @@ def planner_node(state: AgentState):
         json_text = extract_json_from_markdown(content)
         data = PlannerOutput.model_validate_json(json_text)
     except Exception as e:
-        logger.error("LLM call failed in planner node: %s", str(e))
+        logger.error("[planner_node] LLM call failed: %s", str(e))
         return {
             "trigger_plan": False,
             "interface_refresh": False,
@@ -158,7 +158,7 @@ def planner_node(state: AgentState):
             req.model_copy(update={"step_ids": requirement_step_ids.get(req.id, [])})
         )
 
-    logger.info("Planner node finished")
+    logger.info("[planner_node] finished session=%s steps=%d", getattr(state, "session_id", "<unknown>"), len(new_plan))
     return {
         "plan": new_plan,
         "requirements": updated_requirements,

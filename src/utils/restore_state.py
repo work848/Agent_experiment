@@ -3,8 +3,17 @@ import json
 import os
 from typing import Optional
 
+from datetime import datetime, timezone
 
 import glob
+
+
+def _apply_restore_metadata(state, filepath: str):
+    state.last_restored_at = datetime.now(timezone.utc).isoformat()
+    state.restored_from_disk = True
+    if not getattr(state, "persisted_file", None):
+        state.persisted_file = filepath
+    return state
 
 def load_session_state(state_cls, session_id: str):
     path = f"src/memory/state/sessions/{session_id}.json"
@@ -12,7 +21,7 @@ def load_session_state(state_cls, session_id: str):
         return None
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
-    state = state_cls.model_validate(data)
+    state = _apply_restore_metadata(state_cls.model_validate(data), path)
     print(f"[Checkpoint] Session state loaded <- {path}")
     return state
 
@@ -38,7 +47,7 @@ def load_state(state_cls, filepath="src/memory/state/current_state.json"):
         data = json.load(f)
 
     # 🔥 关键：Pydantic 自动重建 Step / Email
-    state = state_cls.model_validate(data)
+    state = _apply_restore_metadata(state_cls.model_validate(data), filepath)
 
     print(f"[Checkpoint] State loaded <- {filepath}")
     return state

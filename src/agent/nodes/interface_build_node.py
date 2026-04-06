@@ -42,10 +42,37 @@ IMPORTANT RULES:
 
 Return JSON only.
 """
+def _make_execute_plan_approval(existing: list[ApprovalRequest]) -> list[ApprovalRequest]:
+    """Return updated approvals with exactly one pending EXECUTE_PLAN per session.
 
+    - 如果已经有 pending 的 EXECUTE_PLAN，就更新那一条（刷新时间、理由等），不再追加新的。
+    - 如果没有 pending 的 EXECUTE_PLAN，就在末尾追加一条新的。
+    - 非 pending 的审批原样保留，作为历史记录。
+    """
+    updated: list[ApprovalRequest] = []
+    pending_updated = False
 
-def _make_execute_plan_approval() -> ApprovalRequest:
-    return ApprovalRequest(
+    for approval in existing:
+        if approval.type == ApprovalType.EXECUTE_PLAN and approval.status == ApprovalStatus.PENDING:
+            # 更新现有的 pending execute_plan 审批，而不是再追加一条
+            new_item = approval.model_copy(
+                update={
+                    "title": "Execute plan",
+                    "description": "Plan is ready. Approve to start execution.",
+                    "reason": "Plan and interface definitions are complete.",
+                    "blocking": True,
+                }
+            )
+            updated.append(new_item)
+            pending_updated = True
+        else:
+            updated.append(approval)
+
+    if pending_updated:
+        return updated
+
+    # 没有 pending 的 EXECUTE_PLAN，就创建一条新的
+    approval = ApprovalRequest(
         id=str(uuid.uuid4()),
         type=ApprovalType.EXECUTE_PLAN,
         title="Execute plan",
@@ -56,6 +83,8 @@ def _make_execute_plan_approval() -> ApprovalRequest:
         requested_action="execute_plan",
         reason="Plan and interface definitions are complete.",
     )
+    updated.append(approval)
+    return updated
 
 
 def interface_node(state: AgentState):
@@ -71,7 +100,7 @@ def interface_node(state: AgentState):
     ]
 
     if not steps_to_design:
-        approval = _make_execute_plan_approval()
+        updated_approvals = _make_execute_plan_approval(state.pending_approvals)
         return {
             "interface_refresh": False,
             "current_agent": NextNode.INTERFACE,
@@ -82,7 +111,7 @@ def interface_node(state: AgentState):
             "approval_required": True,
             "approval_type": ApprovalType.EXECUTE_PLAN,
             "approval_payload": None,
-            "pending_approvals": state.pending_approvals + [approval],
+            "pending_approvals": updated_approvals,
         }
 
     skeleton_context = get_workspace_skeleton_direct(state.workspace_root)
@@ -131,7 +160,7 @@ def interface_node(state: AgentState):
             new_step = step
         new_plan.append(new_step)
 
-    approval = _make_execute_plan_approval()
+    updated_approvals = _make_execute_plan_approval(state.pending_approvals)
     return {
         "plan": new_plan,
         "current_agent": NextNode.INTERFACE,
@@ -148,5 +177,5 @@ def interface_node(state: AgentState):
         "approval_required": True,
         "approval_type": ApprovalType.EXECUTE_PLAN,
         "approval_payload": None,
-        "pending_approvals": state.pending_approvals + [approval],
+        "pending_approvals": updated_approvals,
     }

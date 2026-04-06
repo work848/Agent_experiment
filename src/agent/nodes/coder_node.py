@@ -219,7 +219,10 @@ def _dependencies_satisfied(step: Step, all_steps: list[Step]) -> bool:
     step_map = {candidate.id: candidate for candidate in all_steps}
     for dep_id in step.interface.dependencies:
         dep_step = step_map.get(dep_id)
-        if dep_step is None or dep_step.status != StepStatus.SUCCESS:
+        if dep_step is None:
+            # 不是 plan 中的 step id（比如库名），不作为执行依赖阻塞
+            continue
+        if dep_step.status != StepStatus.SUCCESS:
             return False
     return True
 
@@ -283,9 +286,10 @@ def _execution_failure(
 
 
 def coder_node(state: AgentState):
-    logger.info("--- CODER NODE STARTING ---")
+    logger.info("[coder_node] start session=%s mode=%s", getattr(state, "session_id", "<unknown>"), state.mode)
 
     if not state.plan:
+        logger.warning("[coder_node] no plan available for execution")
         return {
             "current_agent": NextNode.CODER,
             "run_status": RunStatus.BLOCKED,
@@ -298,6 +302,7 @@ def coder_node(state: AgentState):
         }
 
     if not state.workspace_root:
+        logger.warning("[coder_node] workspace_root missing; cannot execute")
         return {
             "current_agent": NextNode.CODER,
             "run_status": RunStatus.BLOCKED,
@@ -320,6 +325,7 @@ def coder_node(state: AgentState):
             if pending_exists
             else "No pending executable steps remain."
         )
+        logger.info("[coder_node] no executable step found; pending_exists=%s", pending_exists)
         return {
             "plan": plan,
             "current_agent": NextNode.CODER,
@@ -333,6 +339,7 @@ def coder_node(state: AgentState):
         }
 
     if not step.interface:
+        logger.error("[coder_node] step %s has no interface definition", step.id)
         return _execution_failure(
             plan=plan,
             step_index=step_index,
@@ -347,6 +354,7 @@ def coder_node(state: AgentState):
     target_file = step.implementation_file or f"src/{step.interface.name}.py"
     full_path = target_file if os.path.isabs(target_file) else os.path.join(state.workspace_root, target_file)
     action_summary = f"Implement step {step.id} in {target_file} for interface {step.interface.name}."
+    logger.info("[coder_node] executing step=%s file=%s", step.id, target_file)
 
     running_step = step.model_copy(
         update={
@@ -357,6 +365,7 @@ def coder_node(state: AgentState):
     plan[step_index] = running_step
 
     if _is_already_implemented(running_step, workspace_skeleton, state.workspace_root):
+        logger.info("[coder_node] step %s already implemented; sending to tester", running_step.id)
         return {
             "plan": plan,
             "current_agent": NextNode.CODER,
@@ -401,6 +410,7 @@ def coder_node(state: AgentState):
             with open(full_path, "r", encoding="utf-8") as file:
                 existing_content = file.read()
         except Exception as exc:
+            logger.exception("[coder_node] failed to read target file %s", target_file)
             return _execution_failure(
                 plan=plan,
                 step_index=step_index,
@@ -469,6 +479,7 @@ def coder_node(state: AgentState):
 
         write_result = write_file(path=target_file, content=code)
         if "successfully" not in write_result.lower():
+            logger.error("[coder_node] write_file failed for %s: %s", target_file, write_result)
             return _execution_failure(
                 plan=plan,
                 step_index=step_index,
@@ -485,6 +496,7 @@ def coder_node(state: AgentState):
             running_step = running_step.model_copy(update={"test_file": test_file})
             plan[step_index] = running_step
 
+        logger.info("[coder_node] finished step=%s -> tester", running_step.id)
         return {
             "plan": plan,
             "current_agent": NextNode.CODER,
@@ -508,7 +520,7 @@ def coder_node(state: AgentState):
             "retrying_node": None,
         }
     except Exception as exc:
-        logger.exception("Step %s failed during code generation", running_step.id)
+        logger.exception("[coder_node] step %s failed during code generation", running_step.id)
         return _execution_failure(
             plan=plan,
             step_index=step_index,

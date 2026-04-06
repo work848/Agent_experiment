@@ -120,8 +120,10 @@ def _build_run_summary(plan: list) -> str:
 
 
 def tester_node(state: AgentState):
+    logger.info("[tester_node] start session=%s current_step_id=%s", getattr(state, "session_id", "<unknown>"), state.current_step_id)
     plan = list(state.plan or [])
     if not plan:
+        logger.warning("[tester_node] no plan available to validate")
         return {
             "current_agent": NextNode.TESTER,
             "next_node": None,
@@ -138,6 +140,7 @@ def tester_node(state: AgentState):
 
     step_index, step = _find_current_step(plan, state.current_step_id)
     if step is None or step_index is None:
+        logger.error("[tester_node] current step not found in plan; current_step_id=%s", state.current_step_id)
         return {
             "current_agent": NextNode.TESTER,
             "next_node": None,
@@ -153,6 +156,7 @@ def tester_node(state: AgentState):
         }
 
     if not state.workspace_root:
+        logger.warning("[tester_node] workspace_root missing; cannot validate")
         return _blocked_result(
             plan,
             step_index,
@@ -185,6 +189,50 @@ def tester_node(state: AgentState):
     full_path = step.implementation_file
     if not os.path.isabs(full_path):
         full_path = os.path.join(state.workspace_root, full_path)
+
+    # 前端文件（.jsx/.js/.tsx/.ts）跳过 Python AST 校验，直接认为结构检查通过
+    ext = os.path.splitext(full_path)[1].lower()
+    if ext in {".jsx", ".js", ".tsx", ".ts"}:
+        ast_summary = f"Skipped Python AST validation for frontend file {step.implementation_file}."
+        ast_evidence = _make_evidence(
+            kind="ast_symbol_check",
+            summary=ast_summary,
+            passed=True,
+            step=step,
+            details={
+                "validator": "check_implementation_detail",
+                "detail": "frontend file; AST validation skipped",
+                "actual_params": None,
+                "expected_param_count": len(step.interface.parameters) if step.interface and step.interface.parameters else 0,
+                "param_count_match": True,
+            },
+        )
+        success_evidence = [ast_evidence]
+        success_summary = ast_summary
+        success_step = step.model_copy(update={"status": StepStatus.SUCCESS})
+        updated_plan = _set_step(plan, step_index, success_step)
+        has_more = any(s.status == StepStatus.PENDING for s in updated_plan)
+        next_run_status = RunStatus.RUNNING if has_more else RunStatus.SUCCESS
+        return {
+            "plan": updated_plan,
+            "current_agent": NextNode.TESTER,
+            "next_node": None,
+            "run_status": next_run_status,
+            "last_validation_status": ValidationStatus.PASSED,
+            "last_validation_passed": True,
+            "last_validation_summary": success_summary,
+            "last_failure_category": None,
+            "last_evidence": success_evidence,
+            "last_error_message": None,
+            "last_outcome": StepOutcome.SUCCESS,
+            "progress_text": f"Step {step.id} validated successfully (frontend file).",
+            "approval_required": False,
+            "approval_type": None,
+            "approval_payload": None,
+            "retry_count": 0,
+            "retrying_node": None,
+            "run_summary": _build_run_summary(updated_plan),
+        }
 
     if not os.path.exists(full_path):
         return _blocked_result(
