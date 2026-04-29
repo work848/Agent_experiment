@@ -44,4 +44,3 @@ Visualize the logic flow and dependencies between different modules and agent no
    ```bash
    git clone [https://github.com/work848/Agent_experiment.git](https://github.com/work848/Agent_experiment.git)
    cd Agent_experiment
-<img width="1920" height="3295" alt="执行完成后" src="https://github.com/user-attachments/assets/578a3c82-bed7-4331-adc6-86424dff392c" />
