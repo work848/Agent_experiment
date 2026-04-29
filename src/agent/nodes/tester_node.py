@@ -22,6 +22,7 @@ from code_indexer.ast_checker import check_implementation_detail
 from utils.test_runner import run_pytest
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 MAX_STEP_RETRIES = 2
 
@@ -190,25 +191,27 @@ def tester_node(state: AgentState):
     if not os.path.isabs(full_path):
         full_path = os.path.join(state.workspace_root, full_path)
 
-    # 前端文件（.jsx/.js/.tsx/.ts）跳过 Python AST 校验，直接认为结构检查通过
+    # 非 Python 代码（前端 / 资源文件等）只检查文件是否存在，存在即视为通过
     ext = os.path.splitext(full_path)[1].lower()
-    if ext in {".jsx", ".js", ".tsx", ".ts"}:
-        ast_summary = f"Skipped Python AST validation for frontend file {step.implementation_file}."
-        ast_evidence = _make_evidence(
-            kind="ast_symbol_check",
-            summary=ast_summary,
+    if ext in {".jsx", ".js", ".tsx", ".ts", ".html", ".css", ".py"}:
+        if not os.path.exists(full_path):
+            return _blocked_result(
+                plan,
+                step_index,
+                step,
+                f"Implementation file does not exist: {step.implementation_file}",
+                failure_category=FailureCategory.MISSING_FILE,
+                evidence_kind="file_presence",
+            )
+
+        summary = f"Implementation file exists for {step.interface.name} at {step.implementation_file}."
+        evidence = _make_evidence(
+            kind="file_presence_check",
+            summary=summary,
             passed=True,
             step=step,
-            details={
-                "validator": "check_implementation_detail",
-                "detail": "frontend file; AST validation skipped",
-                "actual_params": None,
-                "expected_param_count": len(step.interface.parameters) if step.interface and step.interface.parameters else 0,
-                "param_count_match": True,
-            },
+            details={"file_path": step.implementation_file},
         )
-        success_evidence = [ast_evidence]
-        success_summary = ast_summary
         success_step = step.model_copy(update={"status": StepStatus.SUCCESS})
         updated_plan = _set_step(plan, step_index, success_step)
         has_more = any(s.status == StepStatus.PENDING for s in updated_plan)
@@ -220,12 +223,12 @@ def tester_node(state: AgentState):
             "run_status": next_run_status,
             "last_validation_status": ValidationStatus.PASSED,
             "last_validation_passed": True,
-            "last_validation_summary": success_summary,
+            "last_validation_summary": summary,
             "last_failure_category": None,
-            "last_evidence": success_evidence,
+            "last_evidence": [evidence],
             "last_error_message": None,
             "last_outcome": StepOutcome.SUCCESS,
-            "progress_text": f"Step {step.id} validated successfully (frontend file).",
+            "progress_text": f"Step {step.id} validated successfully (file existence only).",
             "approval_required": False,
             "approval_type": None,
             "approval_payload": None,

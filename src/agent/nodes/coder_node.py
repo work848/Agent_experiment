@@ -21,6 +21,7 @@ from code_indexer.get_workspace_skeleton import get_workspace_skeleton_direct
 from tools.write_file_tool import write_file
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 def _make_evidence(
@@ -364,7 +365,10 @@ def coder_node(state: AgentState):
     )
     plan[step_index] = running_step
 
-    if _is_already_implemented(running_step, workspace_skeleton, state.workspace_root):
+    # If this is the first attempt and the target already looks implemented,
+    # skip regeneration and hand off to tester. For retries we ALWAYS regenerate
+    # so that tester feedback can be applied to fix issues.
+    if running_step.retries == 0 and _is_already_implemented(running_step, workspace_skeleton, state.workspace_root):
         logger.info("[coder_node] step %s already implemented; sending to tester", running_step.id)
         return {
             "plan": plan,

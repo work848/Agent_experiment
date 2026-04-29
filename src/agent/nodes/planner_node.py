@@ -7,6 +7,7 @@ from llm.openai_client import call_gpt
 from agent.state import AgentState, NextNode, PlannerOutput, PlanStatus, RunStatus, ApprovalType, Requirement, Step
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 schema = json.dumps(PlannerOutput.model_json_schema(), indent=2)

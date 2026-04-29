@@ -7,6 +7,7 @@ from agent.state import AgentState, ToolEvent
 from tools.tool_registry import TOOL_MAP
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 def _make_tool_event(state: AgentState, tool_name: str, arguments: dict, *, status: str, result=None, error_message=None):

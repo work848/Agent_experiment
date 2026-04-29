@@ -19,8 +19,14 @@ from utils.restore_state import load_latest_state, load_session_state, load_stat
 from utils.save_state import save_session_state, save_state
 from utils.user_action import handle_user_action
 
+# ---- logging setup ----
+import logging
+logging.basicConfig(level=logging.INFO, format="%(name)s | %(levelname)s | %(message)s")
+logger = logging.getLogger(__name__)
+# ------------------------
+
 load_dotenv(dotenv_path="APIKey.env")
-load_dotenv(dotenv_path="workspace.env") 
+load_dotenv(dotenv_path="workspace.env")
 app = FastAPI()
 
 app.add_middleware(
